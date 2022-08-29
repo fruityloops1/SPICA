@@ -1,7 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL;
 
 using SPICA.Formats.CtrH3D.Texture;
-
+using SPICA.PICA.Commands;
 using System;
 
 namespace SPICA.Rendering
@@ -45,13 +45,20 @@ namespace SPICA.Rendering
             {
                 GL.BindTexture(TextureTarget.Texture2D, Id);
 
+                var maxMips = CalculateMipCount(Texture.Width, Texture.Height, Texture.Format) + 1;
+                var mipCount = Texture.MipmapSize;
+                if (Texture.MipmapSize > maxMips)
+                    mipCount = 1;
+
+                mipCount = 1;
+
                 //Load mipmaps
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, Texture.MipmapSize - 1);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLevel, mipCount - 1);
                 //Force load a filter for mipmaps. Materials will later reconfigure with the right filter to use
-                if (Texture.MipmapSize > 1)
+                if (mipCount > 1)
                     GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.NearestMipmapNearest);
 
-                for (int i = 0; i < Texture.MipmapSize; i++)
+                for (int i = 0; i < mipCount; i++)
                 {
                     uint mipwidth = (uint)Math.Max(1, Texture.Width >> i);
                     uint mipheight = (uint)Math.Max(1, Texture.Height >> i);
@@ -91,6 +98,65 @@ namespace SPICA.Rendering
         public void Dispose()
         {
             Dispose(true);
+        }
+
+        private uint CalculateMipCount(int Width, int Height, PICA.Commands.PICATextureFormat Format)
+        {
+            int MipmapNum = 0;
+            int num = Math.Max(Height, Width);
+
+            uint width = (uint)Width;
+            uint height = (uint)Height;
+
+            uint Pow2RoundDown(uint Value)
+            {
+                return IsPow2(Value) ? Value : Pow2RoundUp(Value) >> 1;
+            }
+
+            bool IsPow2(uint Value)
+            {
+                return Value != 0 && (Value & (Value - 1)) == 0;
+            }
+
+            uint Pow2RoundUp(uint Value)
+            {
+                Value--;
+
+                Value |= (Value >> 1);
+                Value |= (Value >> 2);
+                Value |= (Value >> 4);
+                Value |= (Value >> 8);
+                Value |= (Value >> 16);
+
+                return ++Value;
+            }
+
+            while (true)
+            {
+                num >>= 1;
+
+                width = width / 2;
+                height = height / 2;
+
+                width = Pow2RoundDown(width);
+                height = Pow2RoundDown(height);
+
+                Console.WriteLine($"{MipmapNum} wh {width} X {height}");
+
+                if (Format == PICATextureFormat.ETC1)
+                {
+                    if (width < 16 || height < 16)
+                        break;
+                }
+                else if (width < 8 || height < 8)
+                    break;
+
+                if (num > 0)
+                    ++MipmapNum;
+                else
+                    break;
+            }
+            return (uint)MipmapNum;
         }
     }
 }

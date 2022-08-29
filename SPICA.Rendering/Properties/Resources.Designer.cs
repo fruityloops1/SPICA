@@ -61,6 +61,26 @@ namespace SPICA.Rendering.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] boneWeightGradient {
+            get {
+                object obj = ResourceManager.GetObject("boneWeightGradient", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] boneWeightGradient2 {
+            get {
+                object obj = ResourceManager.GetObject("boneWeightGradient2", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to //SPICA auto-generated code
         /////This code was translated from a MAESTRO Vertex Shader
         /////This file was also hand modified to improve compatibility

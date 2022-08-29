@@ -334,13 +334,11 @@ namespace SPICA.PICA.Converters
             int OOffs = 0;
 
             if (Format == PICATextureFormat.ETC1)
-                return RG_ETC1.encodeETC(Img);  
+                return ETC1_Encode(Input, Img.Width, Img.Height, Format);  
             else if (Format == PICATextureFormat.ETC1A4)
-                return RG_ETC1.encodeETCa4(Img);
+                return ETC1_Encode(Input, Img.Width, Img.Height, Format);
             else
             {
-                Input = FlipData(Input, Img.Width, Img.Height);
-
                 var mem = new System.IO.MemoryStream();
                 using (var writer = new System.IO.BinaryWriter(mem))
                 {
@@ -509,5 +507,552 @@ namespace SPICA.PICA.Converters
 
             return L;
         }
+
+        #region ETC1 Encoding
+
+
+        public static byte[] ETC1_Encode(byte[] Data, int Width, int Height, PICATextureFormat format)
+        {
+            byte[] Out_Data = null;
+
+            // Os tiles com compressão ETC1 no 3DS estão embaralhados
+            byte[] Out = new byte[(Width * Height * 4)];
+            int[] Tile_Scramble = Get_ETC1_Scramble(Width, Height);
+
+            int i = 0;
+            for (int Tile_Y = 0; Tile_Y <= (Height / 4) - 1; Tile_Y++)
+            {
+                for (int Tile_X = 0; Tile_X <= (Width / 4) - 1; Tile_X++)
+                {
+                    int TX = Tile_Scramble[i] % (Width / 4);
+                    int TY = (Tile_Scramble[i] - TX) / (Width / 4);
+                    for (int Y = 0; Y <= 3; Y++)
+                    {
+                        for (int X = 0; X <= 3; X++)
+                        {
+                            int Out_Offset = ((TX * 4) + X + ((((TY * 4) + Y)) * Width)) * 4;
+                            int Image_Offset = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+
+                            Out[Out_Offset] = Data[Image_Offset + 0];
+                            Out[Out_Offset + 1] = Data[Image_Offset + 1];
+                            Out[Out_Offset + 2] = Data[Image_Offset + 2];
+                            if (format == PICATextureFormat.ETC1A4)
+                                Out[Out_Offset + 3] = Data[Image_Offset + 3];
+                            else
+                                Out[Out_Offset + 3] = 0xFF;
+                        }
+                    }
+                    i += 1;
+                }
+            }
+
+            Out_Data = new byte[((Width * Height) / (format == PICATextureFormat.ETC1 ? 2 : 1))];
+            int Out_Data_Offset = 0;
+
+            for (int Tile_Y = 0; Tile_Y <= (Height / 4) - 1; Tile_Y++)
+            {
+                for (int Tile_X = 0; Tile_X <= (Width / 4) - 1; Tile_X++)
+                {
+                    bool Flip = false;
+                    bool Difference = false;
+                    int Block_Top = 0;
+                    int Block_Bottom = 0;
+
+                    // Teste do Difference Bit
+                    int Diff_Match_V = 0;
+                    int Diff_Match_H = 0;
+                    for (int Y = 0; Y <= 3; Y++)
+                    {
+                        for (int X = 0; X <= 1; X++)
+                        {
+                            int Image_Offset_1 = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                            int Image_Offset_2 = ((Tile_X * 4) + (2 + X) + (((Tile_Y * 4) + Y) * Width)) * 4;
+
+                            byte Bits_R1 = Convert.ToByte(Out[Image_Offset_1] & 0xF8);
+                            byte Bits_G1 = Convert.ToByte(Out[Image_Offset_1 + 1] & 0xF8);
+                            byte Bits_B1 = Convert.ToByte(Out[Image_Offset_1 + 2] & 0xF8);
+
+                            byte Bits_R2 = Convert.ToByte(Out[Image_Offset_2] & 0xF8);
+                            byte Bits_G2 = Convert.ToByte(Out[Image_Offset_2 + 1] & 0xF8);
+                            byte Bits_B2 = Convert.ToByte(Out[Image_Offset_2 + 2] & 0xF8);
+
+                            if ((Bits_R1 == Bits_R2) & (Bits_G1 == Bits_G2) & (Bits_B1 == Bits_B2))
+                                Diff_Match_V += 1;
+                        }
+                    }
+                    for (int Y = 0; Y <= 1; Y++)
+                    {
+                        for (int X = 0; X <= 3; X++)
+                        {
+                            int Image_Offset_1 = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                            int Image_Offset_2 = ((Tile_X * 4) + X + (((Tile_Y * 4) + (2 + Y)) * Width)) * 4;
+
+                            byte Bits_R1 = Convert.ToByte(Out[Image_Offset_1] & 0xF8);
+                            byte Bits_G1 = Convert.ToByte(Out[Image_Offset_1 + 1] & 0xF8);
+                            byte Bits_B1 = Convert.ToByte(Out[Image_Offset_1 + 2] & 0xF8);
+
+                            byte Bits_R2 = Convert.ToByte(Out[Image_Offset_2] & 0xF8);
+                            byte Bits_G2 = Convert.ToByte(Out[Image_Offset_2 + 1] & 0xF8);
+                            byte Bits_B2 = Convert.ToByte(Out[Image_Offset_2 + 2] & 0xF8);
+
+                            if ((Bits_R1 == Bits_R2) & (Bits_G1 == Bits_G2) & (Bits_B1 == Bits_B2))
+                                Diff_Match_H += 1;
+                        }
+                    }
+                    if (Diff_Match_H == 8)
+                    {
+                        Difference = true;
+                        Flip = true;
+                    }
+                    else if (Diff_Match_V == 8)
+                        Difference = true;
+                    else
+                    {
+                        int Test_R1 = 0;
+                        int Test_G1 = 0;
+                        int Test_B1 = 0;
+                        int Test_R2 = 0;
+                        int Test_G2 = 0;
+                        int Test_B2 = 0;
+                        for (int Y = 0; Y <= 1; Y++)
+                        {
+                            for (int X = 0; X <= 1; X++)
+                            {
+                                int Image_Offset_1 = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                                int Image_Offset_2 = ((Tile_X * 4) + (2 + X) + (((Tile_Y * 4) + (2 + Y)) * Width)) * 4;
+
+                                Test_R1 += Out[Image_Offset_1];
+                                Test_G1 += Out[Image_Offset_1 + 1];
+                                Test_B1 += Out[Image_Offset_1 + 2];
+
+                                Test_R2 += Out[Image_Offset_2];
+                                Test_G2 += Out[Image_Offset_2 + 1];
+                                Test_B2 += Out[Image_Offset_2 + 2];
+                            }
+                        }
+
+                        Test_R1 /= 8;
+                        Test_G1 /= 8;
+                        Test_B1 /= 8;
+
+                        Test_R2 /= 8;
+                        Test_G2 /= 8;
+                        Test_B2 /= 8;
+
+                        int Test_Luma_1 = Convert.ToInt32(0.299F * Test_R1 + 0.587F * Test_G1 + 0.114F * Test_B1);
+                        int Test_Luma_2 = Convert.ToInt32(0.299F * Test_R2 + 0.587F * Test_G2 + 0.114F * Test_B2);
+                        int Test_Flip_Diff = Math.Abs(Test_Luma_1 - Test_Luma_2);
+                        if (Test_Flip_Diff > 48)
+                            Flip = true;
+                    }
+
+                    int Avg_R1 = 0;
+                    int Avg_G1 = 0;
+                    int Avg_B1 = 0;
+                    int Avg_R2 = 0;
+                    int Avg_G2 = 0;
+                    int Avg_B2 = 0;
+
+                    // Primeiro, cálcula a média de cores de cada bloco
+                    if (Flip)
+                    {
+                        for (int Y = 0; Y <= 1; Y++)
+                        {
+                            for (int X = 0; X <= 3; X++)
+                            {
+                                int Image_Offset_1 = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                                int Image_Offset_2 = ((Tile_X * 4) + X + (((Tile_Y * 4) + (2 + Y)) * Width)) * 4;
+
+                                Avg_R1 += Out[Image_Offset_1];
+                                Avg_G1 += Out[Image_Offset_1 + 1];
+                                Avg_B1 += Out[Image_Offset_1 + 2];
+
+                                Avg_R2 += Out[Image_Offset_2];
+                                Avg_G2 += Out[Image_Offset_2 + 1];
+                                Avg_B2 += Out[Image_Offset_2 + 2];
+                            }
+                        }
+                    }
+                    else
+                        for (int Y = 0; Y <= 3; Y++)
+                        {
+                            for (int X = 0; X <= 1; X++)
+                            {
+                                int Image_Offset_1 = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                                int Image_Offset_2 = ((Tile_X * 4) + (2 + X) + (((Tile_Y * 4) + Y) * Width)) * 4;
+
+                                Avg_R1 += Out[Image_Offset_1];
+                                Avg_G1 += Out[Image_Offset_1 + 1];
+                                Avg_B1 += Out[Image_Offset_1 + 2];
+
+                                Avg_R2 += Out[Image_Offset_2];
+                                Avg_G2 += Out[Image_Offset_2 + 1];
+                                Avg_B2 += Out[Image_Offset_2 + 2];
+                            }
+                        }
+
+                    Avg_R1 /= 8;
+                    Avg_G1 /= 8;
+                    Avg_B1 /= 8;
+
+                    Avg_R2 /= 8;
+                    Avg_G2 /= 8;
+                    Avg_B2 /= 8;
+
+                    if (Difference)
+                    {
+                        // +============+
+                        // | Difference |
+                        // +============+
+                        if ((Avg_R1 & 7) > 3)
+                        {
+                            Avg_R1 = Clip(Avg_R1 + 8); Avg_R2 = Clip(Avg_R2 + 8);
+                        }
+                        if ((Avg_G1 & 7) > 3)
+                        {
+                            Avg_G1 = Clip(Avg_G1 + 8); Avg_G2 = Clip(Avg_G2 + 8);
+                        }
+                        if ((Avg_B1 & 7) > 3)
+                        {
+                            Avg_B1 = Clip(Avg_B1 + 8); Avg_B2 = Clip(Avg_B2 + 8);
+                        }
+
+                        Block_Top = (Avg_R1 & 0xF8) | (((Avg_R2 - Avg_R1) / 8) & 7);
+                        Block_Top = Block_Top | (((Avg_G1 & 0xF8) << 8) | ((((Avg_G2 - Avg_G1) / 8) & 7) << 8));
+                        Block_Top = Block_Top | (((Avg_B1 & 0xF8) << 16) | ((((Avg_B2 - Avg_B1) / 8) & 7) << 16));
+
+                        // Vamos ter certeza de que os mesmos valores obtidos pelo descompressor serão usados na comparação (modo Difference)
+                        Avg_R1 = Block_Top & 0xF8;
+                        Avg_G1 = (Block_Top & 0xF800) >> 8;
+                        Avg_B1 = (Block_Top & 0xF80000) >> 16;
+
+                        int R = Signed_Byte(Convert.ToByte(Avg_R1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top & 7) << 5)) >> 5);
+                        int G = Signed_Byte(Convert.ToByte(Avg_G1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top & 0x700) >> 3)) >> 5);
+                        int B = Signed_Byte(Convert.ToByte(Avg_B1 >> 3)) + (Signed_Byte(Convert.ToByte((Block_Top & 0x70000) >> 11)) >> 5);
+
+                        Avg_R2 = R;
+                        Avg_G2 = G;
+                        Avg_B2 = B;
+
+                        Avg_R1 = Avg_R1 + (Avg_R1 >> 5);
+                        Avg_G1 = Avg_G1 + (Avg_G1 >> 5);
+                        Avg_B1 = Avg_B1 + (Avg_B1 >> 5);
+
+                        Avg_R2 = (Avg_R2 << 3) + (Avg_R2 >> 2);
+                        Avg_G2 = (Avg_G2 << 3) + (Avg_G2 >> 2);
+                        Avg_B2 = (Avg_B2 << 3) + (Avg_B2 >> 2);
+                    }
+                    else
+                    {
+                        // +============+
+                        // | Individual |
+                        // +============+
+                        if ((Avg_R1 & 0xF) > 7)
+                            Avg_R1 = Clip(Avg_R1 + 0x10);
+                        if ((Avg_G1 & 0xF) > 7)
+                            Avg_G1 = Clip(Avg_G1 + 0x10);
+                        if ((Avg_B1 & 0xF) > 7)
+                            Avg_B1 = Clip(Avg_B1 + 0x10);
+                        if ((Avg_R2 & 0xF) > 7)
+                            Avg_R2 = Clip(Avg_R2 + 0x10);
+                        if ((Avg_G2 & 0xF) > 7)
+                            Avg_G2 = Clip(Avg_G2 + 0x10);
+                        if ((Avg_B2 & 0xF) > 7)
+                            Avg_B2 = Clip(Avg_B2 + 0x10);
+
+                        Block_Top = ((Avg_R2 & 0xF0) >> 4) | (Avg_R1 & 0xF0);
+                        Block_Top = Block_Top | (((Avg_G2 & 0xF0) << 4) | ((Avg_G1 & 0xF0) << 8));
+                        Block_Top = Block_Top | (((Avg_B2 & 0xF0) << 12) | ((Avg_B1 & 0xF0) << 16));
+
+                        // Vamos ter certeza de que os mesmos valores obtidos pelo descompressor serão usados na comparação (modo Individual)
+                        Avg_R1 = (Avg_R1 & 0xF0) + ((Avg_R1 & 0xF0) >> 4);
+                        Avg_G1 = (Avg_G1 & 0xF0) + ((Avg_G1 & 0xF0) >> 4);
+                        Avg_B1 = (Avg_B1 & 0xF0) + ((Avg_B1 & 0xF0) >> 4);
+
+                        Avg_R2 = (Avg_R2 & 0xF0) + ((Avg_R2 & 0xF0) >> 4);
+                        Avg_G2 = (Avg_G2 & 0xF0) + ((Avg_G2 & 0xF0) >> 4);
+                        Avg_B2 = (Avg_B2 & 0xF0) + ((Avg_B2 & 0xF0) >> 4);
+                    }
+
+                    if (Flip)
+                        Block_Top = Block_Top | 0x1000000;
+                    if (Difference)
+                        Block_Top = Block_Top | 0x2000000;
+
+                    // Seleciona a melhor tabela para ser usada nos blocos
+                    int Mod_Table_1 = 0;
+                    int[] Min_Diff_1 = new int[8];
+                    for (int a = 0; a <= 7; a++)
+                        Min_Diff_1[a] = 0;
+                    for (int Y = 0; Y <= (Flip ? 1 : 3); Y++)
+                    {
+                        for (int X = 0; X <= (Flip ? 3 : 1); X++)
+                        {
+                            int Image_Offset = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                            int Luma = Convert.ToInt32(0.299F * Out[Image_Offset] + 0.587F * Out[Image_Offset + 1] + 0.114F * Out[Image_Offset + 2]);
+
+                            for (int a = 0; a <= 7; a++)
+                            {
+                                int Optimal_Diff = 255 * 4;
+                                for (int b = 0; b <= 3; b++)
+                                {
+                                    int CR = Clip(Avg_R1 + Modulation_Table[a, b]);
+                                    int CG = Clip(Avg_G1 + Modulation_Table[a, b]);
+                                    int CB = Clip(Avg_B1 + Modulation_Table[a, b]);
+
+                                    int Test_Luma = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB);
+                                    int Diff = Math.Abs(Luma - Test_Luma);
+                                    if (Diff < Optimal_Diff)
+                                        Optimal_Diff = Diff;
+                                }
+                                Min_Diff_1[a] += Optimal_Diff;
+                            }
+                        }
+                    }
+
+                    int Temp_1 = 255 * 8;
+                    for (int a = 0; a <= 7; a++)
+                    {
+                        if (Min_Diff_1[a] < Temp_1)
+                        {
+                            Temp_1 = Min_Diff_1[a];
+                            Mod_Table_1 = a;
+                        }
+                    }
+
+                    int Mod_Table_2 = 0;
+                    int[] Min_Diff_2 = new int[8];
+                    for (int a = 0; a <= 7; a++)
+                        Min_Diff_2[a] = 0;
+                    for (int Y = Flip ? 2 : 0; Y <= 3; Y++)
+                    {
+                        for (int X = Flip ? 0 : 2; X <= 3; X++)
+                        {
+                            int Image_Offset = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                            int Luma = Convert.ToInt32(0.299F * Out[Image_Offset] + 0.587F * Out[Image_Offset + 1] + 0.114F * Out[Image_Offset + 2]);
+
+                            for (int a = 0; a <= 7; a++)
+                            {
+                                int Optimal_Diff = 255 * 4;
+                                for (int b = 0; b <= 3; b++)
+                                {
+                                    int CR = Clip(Avg_R2 + Modulation_Table[a, b]);
+                                    int CG = Clip(Avg_G2 + Modulation_Table[a, b]);
+                                    int CB = Clip(Avg_B2 + Modulation_Table[a, b]);
+
+                                    int Test_Luma = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB);
+                                    int Diff = Math.Abs(Luma - Test_Luma);
+                                    if (Diff < Optimal_Diff)
+                                        Optimal_Diff = Diff;
+                                }
+                                Min_Diff_2[a] += Optimal_Diff;
+                            }
+                        }
+                    }
+
+                    int Temp_2 = 255 * 8;
+                    for (int a = 0; a <= 7; a++)
+                    {
+                        if (Min_Diff_2[a] < Temp_2)
+                        {
+                            Temp_2 = Min_Diff_2[a];
+                            Mod_Table_2 = a;
+                        }
+                    }
+
+                    Block_Top = Block_Top | (Mod_Table_1 << 29);
+                    Block_Top = Block_Top | (Mod_Table_2 << 26);
+
+                    // Seleciona o melhor valor da tabela que mais se aproxima com a cor original
+                    for (int Y = 0; Y <= (Flip ? 1 : 3); Y++)
+                    {
+                        for (int X = 0; X <= (Flip ? 3 : 1); X++)
+                        {
+                            int Image_Offset = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                            int Luma = Convert.ToInt32(0.299F * Out[Image_Offset] + 0.587F * Out[Image_Offset + 1] + 0.114F * Out[Image_Offset + 2]);
+
+                            int Col_Diff = 255;
+                            int Pix_Table_Index = 0;
+                            for (int b = 0; b <= 3; b++)
+                            {
+                                int CR = Clip(Avg_R1 + Modulation_Table[Mod_Table_1, b]);
+                                int CG = Clip(Avg_G1 + Modulation_Table[Mod_Table_1, b]);
+                                int CB = Clip(Avg_B1 + Modulation_Table[Mod_Table_1, b]);
+
+                                int Test_Luma = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB);
+                                int Diff = Math.Abs(Luma - Test_Luma);
+                                if (Diff < Col_Diff)
+                                {
+                                    Col_Diff = Diff;
+                                    Pix_Table_Index = b;
+                                }
+                            }
+
+                            int Index = X * 4 + Y;
+                            if (Index < 8)
+                            {
+                                Block_Bottom = Block_Bottom | (((Pix_Table_Index & 2) >> 1) << (Index + 8));
+                                Block_Bottom = Block_Bottom | ((Pix_Table_Index & 1) << (Index + 24));
+                            }
+                            else
+                            {
+                                Block_Bottom = Block_Bottom | (((Pix_Table_Index & 2) >> 1) << (Index - 8));
+                                Block_Bottom = Block_Bottom | ((Pix_Table_Index & 1) << (Index + 8));
+                            }
+                        }
+                    }
+
+                    for (int Y = Flip ? 2 : 0; Y <= 3; Y++)
+                    {
+                        for (int X = Flip ? 0 : 2; X <= 3; X++)
+                        {
+                            int Image_Offset = ((Tile_X * 4) + X + (((Tile_Y * 4) + Y) * Width)) * 4;
+                            int Luma = Convert.ToInt32(0.299F * Out[Image_Offset] + 0.587F * Out[Image_Offset + 1] + 0.114F * Out[Image_Offset + 2]);
+
+                            int Col_Diff = 255;
+                            int Pix_Table_Index = 0;
+                            for (int b = 0; b <= 3; b++)
+                            {
+                                int CR = Clip(Avg_R2 + Modulation_Table[Mod_Table_2, b]);
+                                int CG = Clip(Avg_G2 + Modulation_Table[Mod_Table_2, b]);
+                                int CB = Clip(Avg_B2 + Modulation_Table[Mod_Table_2, b]);
+
+                                int Test_Luma = Convert.ToInt32(0.299F * CR + 0.587F * CG + 0.114F * CB);
+                                int Diff = Math.Abs(Luma - Test_Luma);
+                                if (Diff < Col_Diff)
+                                {
+                                    Col_Diff = Diff;
+                                    Pix_Table_Index = b;
+                                }
+                            }
+
+                            int Index = X * 4 + Y;
+                            if (Index < 8)
+                            {
+                                Block_Bottom = Block_Bottom | (((Pix_Table_Index & 2) >> 1) << (Index + 8));
+                                Block_Bottom = Block_Bottom | ((Pix_Table_Index & 1) << (Index + 24));
+                            }
+                            else
+                            {
+                                Block_Bottom = Block_Bottom | (((Pix_Table_Index & 2) >> 1) << (Index - 8));
+                                Block_Bottom = Block_Bottom | ((Pix_Table_Index & 1) << (Index + 8));
+                            }
+                        }
+                    }
+
+                    // Copia dados para a saída
+                    byte[] Block = new byte[8];
+                    Buffer.BlockCopy(BitConverter.GetBytes(Block_Top), 0, Block, 0, 4);
+                    Buffer.BlockCopy(BitConverter.GetBytes(Block_Bottom), 0, Block, 4, 4);
+                    byte[] New_Block = new byte[8];
+                    for (int j = 0; j <= 7; j++)
+                        New_Block[7 - j] = Block[j];
+                    if (format == PICATextureFormat.ETC1A4)
+                    {
+                        byte[] Alphas = new byte[8];
+                        int Alpha_Offset = 0;
+                        for (int TX = 0; TX <= 3; TX++)
+                        {
+                            for (int TY = 0; TY <= 3; TY += 2)
+                            {
+                                int Img_Offset_1 = (Tile_X * 4 + TX + ((Tile_Y * 4 + TY) * Width)) * 4;
+                                int Img_Offset_2 = (Tile_X * 4 + TX + ((Tile_Y * 4 + TY + 1) * Width)) * 4;
+
+                                byte Alpha_1 = (byte)(Out[Img_Offset_1 + 3] >> 4);
+                                byte Alpha_2 = (byte)(Out[Img_Offset_2 + 3] >> 4);
+
+                                Alphas[Alpha_Offset] = (byte)(Alpha_1 | (Alpha_2 << 4));
+
+                                Alpha_Offset += 1;
+                            }
+                        }
+
+                        Buffer.BlockCopy(Alphas, 0, Out_Data, Out_Data_Offset, 8);
+                        Buffer.BlockCopy(New_Block, 0, Out_Data, Out_Data_Offset + 8, 8);
+                        Out_Data_Offset += 16;
+                    }
+                    else if (format == PICATextureFormat.ETC1)
+                    {
+                        Buffer.BlockCopy(New_Block, 0, Out_Data, Out_Data_Offset, 8);
+                        Out_Data_Offset += 8;
+                    }
+                }
+            }
+
+            return Out_Data;
+        }
+
+        private static int[] Get_ETC1_Scramble(int Width, int Height)
+        {
+            int[] Tile_Scramble = new int[((Width / 4) * (Height / 4)) - 1 + 1];
+            int Base_Accumulator = 0;
+            int Line_Accumulator = 0;
+            int Base_Number = 0;
+            int Line_Number = 0;
+
+            for (int Tile = 0; Tile <= Tile_Scramble.Length - 1; Tile++)
+            {
+                if ((Tile % (Width / 4) == 0) & Tile > 0)
+                {
+                    if (Line_Accumulator < 1)
+                    {
+                        Line_Accumulator += 1;
+                        Line_Number += 2;
+                        Base_Number = Line_Number;
+                    }
+                    else
+                    {
+                        Line_Accumulator = 0;
+                        Base_Number -= 2;
+                        Line_Number = Base_Number;
+                    }
+                }
+
+                Tile_Scramble[Tile] = Base_Number;
+
+                if (Base_Accumulator < 1)
+                {
+                    Base_Accumulator += 1;
+                    Base_Number += 1;
+                }
+                else
+                {
+                    Base_Accumulator = 0;
+                    Base_Number += 3;
+                }
+            }
+
+            return Tile_Scramble;
+        }
+
+        private static sbyte Signed_Byte(byte Byte_To_Convert)
+        {
+            if ((Byte_To_Convert < 0x80))
+                return Convert.ToSByte(Byte_To_Convert);
+            return Convert.ToSByte(Byte_To_Convert - 0x100);
+        }
+
+        private static byte Clip(int Value)
+        {
+            if (Value > 0xFF)
+                return 0xFF;
+            else if (Value < 0)
+                return 0;
+            else
+                return Convert.ToByte(Value & 0xFF);
+        }
+
+        private static int[,] Modulation_Table = new[,] {
+            { 2, 8, -2, -8 },
+            { 5, 17, -5, -17 },
+            { 9, 29, -9, -29 },
+            { 13, 42, -13, -42 },
+            { 18, 60, -18, -60 },
+            { 24, 80, -24, -80 },
+            { 33, 106, -33, -106 },
+            { 47, 183, -47, -183 }
+        };
+
+        #endregion
     }
 }

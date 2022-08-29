@@ -1,4 +1,5 @@
-﻿using SPICA.Math3D;
+﻿using SPICA.Formats.Common;
+using SPICA.Math3D;
 using SPICA.Serialization.Attributes;
 using SPICA.Serialization.Serializer;
 
@@ -87,6 +88,16 @@ namespace SPICA.Serialization
 
             if (Section.Header != null)
             {
+                if (Section.Header is Formats.CtrGfx.GfxSectionHeader)
+                {
+                    if (((Formats.CtrGfx.GfxSectionHeader)Section.Header).Magic == IOUtils.ToUInt32("IMAG"))
+                    {
+                        Align(64);
+                        Writer.Write(0);
+                        Writer.Write(0);
+                    }
+                }
+
                 WriteValue(Section.Header);
             }
 

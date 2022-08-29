@@ -66,6 +66,8 @@ namespace SPICA.Rendering.Shaders
             SB.AppendLine($"uniform vec4 {SelectionUniform};");
             SB.AppendLine($"uniform int {DebugModeUniform};");
             SB.AppendLine($"uniform int {DebugLUTModeUniform};");
+
+            
             SB.AppendLine();
             SB.AppendLine($"in vec4 {ShaderOutputRegName.QuatNormal};");
             SB.AppendLine($"in vec4 {ShaderOutputRegName.Color};");
@@ -73,6 +75,7 @@ namespace SPICA.Rendering.Shaders
             SB.AppendLine($"in vec4 {ShaderOutputRegName.TexCoord1};");
             SB.AppendLine($"in vec4 {ShaderOutputRegName.TexCoord2};");
             SB.AppendLine($"in vec4 {ShaderOutputRegName.View};");
+            SB.AppendLine($"in vec4 WeightPreview;");
             SB.AppendLine();
             SB.AppendLine("out vec4 Output;");
             SB.AppendLine();
@@ -252,7 +255,8 @@ namespace SPICA.Rendering.Shaders
             SB.AppendLine($"\telse if ({DebugModeUniform} == 6)"); //Show uv pattern
             SB.AppendLine($"\t    Output.rgb = texture(UVTestPattern, {ShaderOutputRegName.TexCoord0}.xy).rgb;");
 
-
+            SB.AppendLine($"\telse if ({DebugModeUniform} == 7)"); //Show weights
+            SB.AppendLine($"\t    Output.rgb = WeightPreview.rgb;");
 
             SB.AppendLine($"\telse if ({DebugModeUniform} == 8)"); //Show tangent
             if (HasFragColors)
@@ -292,6 +296,7 @@ namespace SPICA.Rendering.Shaders
                 SB.AppendLine($"\t    Output.rgb = DebugSpec.bbb;");
             }
 
+            
             SB.AppendLine($"Output.rgb += {SelectionUniform}.rgb * {SelectionUniform}.a;");
 
             SB.AppendLine("}");

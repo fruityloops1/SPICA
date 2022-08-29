@@ -2,6 +2,7 @@
 using SPICA.Math3D;
 
 using System.Numerics;
+using Newtonsoft.Json;
 
 namespace SPICA.Formats.CtrGfx.Model
 {
@@ -20,9 +21,13 @@ namespace SPICA.Formats.CtrGfx.Model
         public int Index;
         public int ParentIndex;
 
+        [JsonIgnore]
         public GfxBone Parent;
+        [JsonIgnore]
         public GfxBone Child;
+        [JsonIgnore]
         public GfxBone PrevSibling;
+        [JsonIgnore]
         public GfxBone NextSibling;
 
         public Vector3 Scale;

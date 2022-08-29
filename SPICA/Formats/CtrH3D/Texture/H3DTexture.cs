@@ -143,6 +143,9 @@ namespace SPICA.Formats.CtrH3D.Texture
             int width = Math.Max(1, this.Width >> level);
             int height = Math.Max(1, this.Height >> level);
             int size = (width * height * TextureConverter.FmtBPP[(int)this.Format] / 8);
+            if (offset + size > data.Length)
+                return data;
+
             var newBytes = new byte[size];
             Buffer.BlockCopy(data, offset, newBytes, 0, size);
 

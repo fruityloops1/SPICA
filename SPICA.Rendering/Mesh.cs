@@ -213,6 +213,8 @@ namespace SPICA.Rendering
               Texture2Name = MS.Texture2Name;*/
 
             Parent.Renderer.BindUVTestPattern(20);
+            Parent.Renderer.BindWeightRamp1(21);
+            Parent.Renderer.BindWeightRamp2(22);
 
             //Setup texture units
             if (Texture0Name != null)
@@ -245,6 +247,11 @@ namespace SPICA.Rendering
             Shader.SetVtxVector4(DefaultShaderIds.PosOffs,     PosOffs);
             Shader.SetVtxVector4(DefaultShaderIds.IrScale + 0, Scales0);
             Shader.SetVtxVector4(DefaultShaderIds.IrScale + 1, Scales1);
+            GL.Uniform1(GL.GetUniformLocation(Shader.Handle, "selectedBoneIndex"), Renderer.SelectedBoneID);
+            GL.Uniform1(GL.GetUniformLocation(Shader.Handle, "weightRampType"), 2);
+            GL.Uniform1(GL.GetUniformLocation(Shader.Handle, "hasWeights"), 0);
+            if (BaseMesh.Attributes.Any(x => x.Name == PICAAttributeName.BoneWeight))
+                GL.Uniform1(GL.GetUniformLocation(Shader.Handle, "hasWeights"), 1);
 
             //Render all SubMeshes
             GL.BindVertexArray(VAOHandle);
@@ -276,6 +283,7 @@ namespace SPICA.Rendering
                 bool SmoothSkin = SM.Skinning == H3DSubMeshSkinning.Smooth;
 
                 Matrix4[] Transforms = new Matrix4[20];
+                int[] BoneTable = new int[20];
 
                 for (int Index = 0; Index < Transforms.Length; Index++)
                 {
@@ -284,6 +292,8 @@ namespace SPICA.Rendering
                     if (Index < SM.BoneIndicesCount && SM.BoneIndices[Index] < Parent.SkeletonTransforms.Length)
                     {
                         int BoneIndex = SM.BoneIndices[Index];
+
+                        BoneTable[Index] = BoneIndex;
 
                         Transform = Parent.SkeletonTransforms[BoneIndex];
 
@@ -349,6 +359,7 @@ namespace SPICA.Rendering
                     }
 
                     Shader.SetVtx3x4Array(DefaultShaderIds.UnivReg + Index * 3, Transform);
+                    GL.Uniform1(GL.GetUniformLocation(Shader.Handle, String.Format("BoneTable[{0}]", Index)), BoneTable[Index]);
                 }
 
                 int BoolsLocation = GL.GetUniformLocation(Shader.Handle, ShaderGenerator.BoolsName);

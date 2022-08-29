@@ -55,7 +55,8 @@ namespace SPICA.Formats.CtrGfx.Model.Mesh
 
         private ulong RenderKeyCache;
         private uint  CommandAlloc;
-        private uint Unk;
+        private uint Unk1;
+        private uint Unk2;
 
         public GfxMesh()
         {

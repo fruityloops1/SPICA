@@ -126,7 +126,6 @@ namespace SPICA.PICA.Converters
                     foreach (PICAAttribute Attrib in Attributes)
                     {
                         AlignStream(MS, Attrib.Format);
-
                         for (int i = 0; i < Attrib.Elements; i++)
                         {
                             switch (Attrib.Name)
@@ -143,6 +142,13 @@ namespace SPICA.PICA.Converters
 
 								default: Write(Writer, Attrib, 0); break;
                             }
+                        }
+                        //Write extra alignment for certain elements
+                        if (Attrib.Format == PICAAttributeFormat.Byte || Attrib.Format == PICAAttributeFormat.Ubyte)
+                        {
+                            //Even out the size
+                            if (Attrib.Elements == 1 || Attrib.Elements == 3)
+                                Writer.BaseStream.Position += Writer.BaseStream.Position & 1;
                         }
                     }
                 }

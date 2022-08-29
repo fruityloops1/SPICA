@@ -18,6 +18,8 @@ namespace SPICA.Formats.CtrGfx.Animation
 
         [Ignore] public readonly List<bool> Values;
 
+        [Ignore] public bool Constant;
+
         public GfxAnimBoolean()
         {
             Values = new List<bool>();
@@ -39,6 +41,8 @@ namespace SPICA.Formats.CtrGfx.Animation
 
             BitReader BR = new BitReader(Deserializer.Reader);
 
+            //Load the first booolean as a constant
+            Constant = BR.ReadBit();
             for (int i = 0; i < EndFrame - StartFrame; i++)
             {
                 Values.Add(BR.ReadBit());
@@ -61,6 +65,7 @@ namespace SPICA.Formats.CtrGfx.Animation
 
             BitWriter BW = new BitWriter(Serializer.Writer);
 
+            BW.WriteBit(Constant);
             foreach (bool Value in Values)
             {
                 BW.WriteBit(Value);

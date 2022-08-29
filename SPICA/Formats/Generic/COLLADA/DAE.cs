@@ -327,16 +327,24 @@ namespace SPICA.Formats.Generic.COLLADA
                         int[] vcount = new int[Vertices.Length];
 
                         Dictionary<string, int> Weights = new Dictionary<string, int>();
-                        List<int[]> boneIndices = new List<int[]>();
+
+                        List<int> rigiedVerts = new List<int>();
+                        foreach (var vert in Vertices)
+                            rigiedVerts.Add(0); 
+
+                            List<int[]> boneIndices = new List<int[]>();
                         foreach (var vert in Vertices)
                             boneIndices.Add(new int[4]);
+
+                        List<float[]> boneWeights = new List<float[]>();
+                        foreach (var vert in Vertices)
+                            boneWeights.Add(new float[4]);
 
                         int vi = 0, vci = 0;
                         bool[] Visited = new bool[Vertices.Length];
 
                         foreach (var SM in Mesh.SubMeshes)
                         {
-
                             foreach (var index in SM.Indices)
                             {
                                 if (Visited[index])
@@ -345,7 +353,7 @@ namespace SPICA.Formats.Generic.COLLADA
                                 Visited[index] = true;
 
                                 var vertex = Vertices[index];
-                                if (Mesh.Skinning == H3DMeshSkinning.Smooth)
+                                if (SM.Skinning == H3DSubMeshSkinning.Smooth)
                                 {
                                     for (int i = 0; i < 4; i++)
                                     {
@@ -356,6 +364,9 @@ namespace SPICA.Formats.Generic.COLLADA
                                             BIndex = SM.BoneIndices[BIndex];
 
                                         boneIndices[index][i] = BIndex;
+                                        boneWeights[index][i] = vertex.Weights[i];
+
+                                        rigiedVerts[index] = 0;
                                     }
                                 }
                                 else
@@ -367,27 +378,27 @@ namespace SPICA.Formats.Generic.COLLADA
                                         BIndex = SM.BoneIndices[BIndex];
 
                                     boneIndices[index][0] = BIndex;
+                                    boneWeights[index][0] = vertex.Weights[0];
+
+                                    rigiedVerts[index] = 1;
                                 }
                             }
                         }
 
                         int vertexID = 0;
-                        if (Mesh.Skinning == H3DMeshSkinning.Smooth)
+                        if (Mesh.Skinning == H3DMeshSkinning.Smooth || Mesh.SubMeshes.Any(x => x.Skinning == H3DSubMeshSkinning.Smooth))
                         {
                             foreach (PICAVertex Vertex in Vertices)
                             {
                                 int Count = 0;
 
-                                for (int Index = 0; Index < 4; Index++)
+                                if (rigiedVerts[vertexID] == 1)
                                 {
-                                    int BIndex = boneIndices[vertexID][Index];
-                                    float Weight = Vertex.Weights[Index];
-
-                                    if (Weight == 0) break;
-
-                                    string WStr = Weight.ToString(CultureInfo.InvariantCulture);
+                                    int BIndex = boneIndices[vertexID][0];
 
                                     v[vi++] = BIndex;
+
+                                    string WStr = "1";
 
                                     if (Weights.ContainsKey(WStr))
                                     {
@@ -396,15 +407,39 @@ namespace SPICA.Formats.Generic.COLLADA
                                     else
                                     {
                                         v[vi++] = Weights.Count;
-
                                         Weights.Add(WStr, Weights.Count);
                                     }
-
-                                    Count++;
+                                    vcount[vci++] = 1;
                                 }
+                                else
+                                {
+                                    for (int Index = 0; Index < 4; Index++)
+                                    {
+                                        int BIndex = boneIndices[vertexID][Index];
+                                        float Weight = Vertex.Weights[Index];
 
-                                vcount[vci++] = Count;
+                                        if (Weight == 0 || BIndex == -1) continue;
 
+                                        string WStr = Weight.ToString(CultureInfo.InvariantCulture);
+
+                                        v[vi++] = BIndex;
+
+                                        if (Weights.ContainsKey(WStr))
+                                        {
+                                            v[vi++] = Weights[WStr];
+                                        }
+                                        else
+                                        {
+                                            v[vi++] = Weights.Count;
+
+                                            Weights.Add(WStr, Weights.Count);
+                                        }
+
+                                        Count++;
+                                    }
+
+                                    vcount[vci++] = Count;
+                                }
                                 vertexID++;
                             }
                         }

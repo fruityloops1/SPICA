@@ -35,6 +35,7 @@ namespace SPICA.Formats.CtrGfx.Animation
         private const string MatMapperBCREx   = @"Materials\[""(.+)""\]\.TextureMappers\[(\d)\]\.Sampler\.BorderColor";
         private const string MatMapperTexREx = @"Materials\[""(.+)""\]\.TextureMappers\[(\d)\]\.Texture";
         private const string MeshNodeVisREx   = @"MeshNodeVisibilities\[""(.+)""\]\.IsVisible";
+        private const string MeshVisREx = @"Meshes\[(\d)\]\.IsVisible";
 
         private const string ViewUpdaterTarget = "ViewUpdater.TargetPosition";
         private const string ViewUpdaterUpVec  = "ViewUpdater.UpwardVector";
@@ -154,15 +155,16 @@ namespace SPICA.Formats.CtrGfx.Animation
                             H3DTargetType TargetType = 0;
 
                             Match Path = Regex.Match(Elem.Name, MeshNodeVisREx);
+                            Match PathVis = Regex.Match(Elem.Name, MeshVisREx);
 
-                            if (Path.Success)
+                            if (Path.Success || PathVis.Success)
                             {
                                 TargetType = H3DTargetType.MeshNodeVisibility;
                             }
 
-                            if (Path.Success && TargetType != 0)
+                            if (TargetType != 0)
                             {
-                                string Name = Path.Groups[1].Value;
+                                string Name = PathVis.Success ? $"Meshes[{PathVis.Groups[1].Value}]" : Path.Groups[1].Value;
 
                                 Output.Elements.Add(new H3DAnimationElement()
                                 {

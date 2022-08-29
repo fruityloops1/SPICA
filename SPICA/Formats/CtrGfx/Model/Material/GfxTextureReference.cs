@@ -15,5 +15,10 @@ namespace SPICA.Formats.CtrGfx.Model.Material
         }
 
         private uint TexturePtr;
+
+        public GfxTextureReference()
+        {
+            this.Header.MagicNumber = 0x424F5854;
+        }
     }
 }

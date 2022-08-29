@@ -19,6 +19,8 @@ namespace SPICA.Rendering
     public class Renderer : IDisposable
     {
         public int DebugShadingMode = 0;
+
+        public static int SelectedBoneID = -1;
         public static int DebugLUTShadingMode = 0;
 
         public static Dictionary<string, Texture> TextureCache = new Dictionary<string, Texture>();
@@ -41,6 +43,8 @@ namespace SPICA.Rendering
 
         private Texture DefaultTexture;
         private Texture UVTestTexture;
+        private Texture WeightRampTexture1;
+        private Texture WeightRampTexture2;
 
         private LUT DefaultLUT;
 
@@ -57,7 +61,9 @@ namespace SPICA.Rendering
                 DefaultTexture = new Texture(new H3DTexture("Default.png"));
 
             UVTestTexture = new Texture(new H3DTexture("UVPattern", Resources.UVPattern));
-
+            WeightRampTexture1 = new Texture(new H3DTexture("WeightRampTexture1", Resources.boneWeightGradient));
+            WeightRampTexture2 = new Texture(new H3DTexture("WeightRampTexture2", Resources.boneWeightGradient2));
+            
             var lut = new H3DLUT() { Name = "Default" };
             lut.Samplers.Add(new H3DLUTSampler()
             {
@@ -229,6 +235,30 @@ namespace SPICA.Rendering
         internal bool BindUVTestPattern(int Unit)
         {
             UVTestTexture.Bind(Unit);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            return true;
+        }
+
+        internal bool BindWeightRamp1(int Unit)
+        {
+            WeightRampTexture1.Bind(Unit);
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            return true;
+        }
+
+        internal bool BindWeightRamp2(int Unit)
+        {
+            WeightRampTexture2.Bind(Unit);
 
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);

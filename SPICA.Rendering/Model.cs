@@ -30,7 +30,8 @@ namespace SPICA.Rendering
         internal Matrix4[]       InverseTransforms;
         internal Matrix4[]       SkeletonTransforms;
         internal MaterialState[] MaterialStates;
-        internal bool[]          Visibilities;
+        internal bool[]          MeshNodeVisibilities;
+        internal bool[]          MeshIndexVisibilities;
 
         public readonly SkeletalAnimation   SkeletalAnim;
         public readonly MaterialAnimation   MaterialAnim;
@@ -84,6 +85,12 @@ namespace SPICA.Rendering
                 return BaseModel.Materials[name];
 
             return null;
+        }
+
+        public void SetMeshIndexVis(int id, bool value)
+        {
+            if (MeshIndexVisibilities.Length > id)
+                MeshIndexVisibilities[id] = value;
         }
 
         public MaterialState GetState(string name)
@@ -190,6 +197,10 @@ namespace SPICA.Rendering
             GL.Uniform1(GL.GetUniformLocation(Shdr.Handle, "LUTs[4]"), 8);
             GL.Uniform1(GL.GetUniformLocation(Shdr.Handle, "LUTs[5]"), 9);
             GL.Uniform1(GL.GetUniformLocation(Shdr.Handle, "UVTestPattern"), 20);
+            GL.Uniform1(GL.GetUniformLocation(Shdr.Handle, "weightRamp1"), 21);
+            GL.Uniform1(GL.GetUniformLocation(Shdr.Handle, "weightRamp2"), 22);
+            GL.Uniform1(GL.GetUniformLocation(Shdr.Handle, "weightRampType"), 2);
+
 
             for (int i = 0; i < 3; i++)
             {
@@ -547,7 +558,10 @@ namespace SPICA.Rendering
 
                 MaterialStates = MaterialAnim.GetMaterialStates();
 
-                Visibilities = VisibilityAnim.GetMeshVisibilities();
+                MeshNodeVisibilities = VisibilityAnim.GetMeshVisibilities();
+                MeshIndexVisibilities = new bool[BaseModel.Meshes.Count];
+                for (int i = 0; i < BaseModel.Meshes.Count; i++)
+                    MeshIndexVisibilities[i] = true;
             }
         }
 
@@ -566,17 +580,25 @@ namespace SPICA.Rendering
         {
             Transform = this.BaseModel.WorldTransform.ToMatrix4();
 
+            int index = 0;
             foreach (Mesh Mesh in Meshes)
             {
-                if (!Mesh.BaseMesh.IsVisible)
-                    continue;
-
                 int n = Mesh.BaseMesh.NodeIndex;
 
-                if (n < Visibilities.Length && !Visibilities[n])
+                if (n < MeshNodeVisibilities.Length && !MeshNodeVisibilities[n])
                 {
                     continue;
                 }
+
+                if (index < MeshIndexVisibilities.Length && !MeshIndexVisibilities[index])
+                {
+                    continue;
+                }
+
+                index++;
+
+                if (!Mesh.BaseMesh.IsVisible)
+                    continue;
 
                 Shader Shader = Shaders[Mesh.BaseMesh.MaterialIndex];
 
@@ -672,7 +694,7 @@ namespace SPICA.Rendering
                 GL.Uniform1(GL.GetUniformLocation(Shader.Handle, FragmentShaderGenerator.DebugModeUniform), Renderer.DebugShadingMode);
                 GL.Uniform1(GL.GetUniformLocation(Shader.Handle, FragmentShaderGenerator.DebugLUTModeUniform), Renderer.DebugLUTShadingMode);
 
-                bool isSelected = MP.SelectionColor.W > 0;
+                bool isSelected = Mesh.BaseMesh.IsSelected || MP.SelectionColor.W > 0;
 
                 Mesh.Texture0Name = MS.Texture0Name;
                 Mesh.Texture1Name = MS.Texture1Name;
