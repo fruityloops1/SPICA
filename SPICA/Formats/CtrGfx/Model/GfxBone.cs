@@ -44,8 +44,14 @@ namespace SPICA.Formats.CtrGfx.Model
 
         public void UpdateMatrices()
         {
-            LocalTransform = new Matrix3x4(CalculateLocalMatrix());
-            WorldTransform = new Matrix3x4(CalculateWorldMatrix());
+            var worldTransform = CalculateWorldMatrix();
+            var localTransform = CalculateLocalMatrix();
+
+            LocalTransform = new Matrix3x4(localTransform);
+            WorldTransform = new Matrix3x4(worldTransform);
+
+            Matrix4x4.Invert(WorldTransform, out Matrix4x4 inverse);
+            InvWorldTransform = new Matrix3x4(inverse);
         }
 
 
@@ -79,19 +85,19 @@ namespace SPICA.Formats.CtrGfx.Model
 
         public Matrix4x4 CalculateWorldMatrix()
         {
-            Matrix4x4 transform = CalculateLocalMatrix();
             if (Parent != null)
-                return transform * Parent.CalculateWorldMatrix();
-            return transform;
+                return CalculateLocalMatrix() * Parent.CalculateWorldMatrix();
+            return CalculateLocalMatrix();
         }
 
         public Matrix4x4 CalculateLocalMatrix()
         {
-            return Matrix4x4.CreateTranslation(Translation) *
-                (Matrix4x4.CreateRotationX(Rotation.X) *
-                Matrix4x4.CreateRotationY(Rotation.Y) *
-                Matrix4x4.CreateRotationZ(Rotation.Z)) *
-                Matrix4x4.CreateScale(Scale);
+            var trans = Matrix4x4.CreateTranslation(Translation);
+            var sca = Matrix4x4.CreateScale(Scale);
+            var rot = Matrix4x4.CreateRotationX(Rotation.X) *
+                      Matrix4x4.CreateRotationY(Rotation.Y) *
+                      Matrix4x4.CreateRotationZ(Rotation.Z);
+            return sca * rot * trans;
         }
     }
 }

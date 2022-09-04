@@ -58,7 +58,6 @@ namespace SPICA.Formats.CtrGfx.LUT
                     RawCommands[i + 2] << 16 |
                     RawCommands[i + 3] << 24);
             }
-
             uint Index = 0;
 
             PICACommandReader Reader = new PICACommandReader(Commands);
@@ -66,7 +65,6 @@ namespace SPICA.Formats.CtrGfx.LUT
             while (Reader.HasCommand)
             {
                 PICACommand Cmd = Reader.GetCommand();
-
                 if (Cmd.Register == PICARegister.GPUREG_LIGHTING_LUT_INDEX)
                 {
                     Index = Cmd.Parameters[0] & 0xff;
@@ -85,7 +83,38 @@ namespace SPICA.Formats.CtrGfx.LUT
 
         bool ICustomSerialization.Serialize(BinarySerializer Serializer)
         {
-            //TODO
+            uint[] QuantizedValues = new uint[256];
+
+            for (int Index = 0; Index < _Table.Length; Index++)
+            {
+                float Difference = 0;
+
+                if (Index < _Table.Length - 1)
+                {
+                    Difference = _Table[Index + 1] - _Table[Index];
+                }
+
+                int Value = (int)(_Table[Index] * 0xfff);
+                int Diff = (int)(Difference * 0x7ff);
+
+                QuantizedValues[Index] = (uint)(Value | (Diff << 12)) & 0xffffff;
+            }
+
+            PICACommandWriter Writer = new PICACommandWriter();
+
+            Writer.SetCommands(PICARegister.GPUREG_LIGHTING_LUT_DATA0, false, 0xf, QuantizedValues);
+
+            Writer.WriteEnd();
+
+            var Commands = Writer.GetBuffer();
+
+            var mem = new MemoryStream();
+            using (var writer = new BinaryWriter(mem))
+            {
+                for (int i = 0; i < Commands.Length; i++)
+                    writer.Write(Commands[i]);
+            }
+            RawCommands = mem.ToArray();
 
             return false;
         }

@@ -140,10 +140,11 @@ namespace SPICA.Formats.CtrH3D.Model.Mesh
             }
         }
 
-        public void UpdateBoolUniforms(H3DMaterial Material)
+        public void UpdateBoolUniforms(H3DMaterial Material, bool isPokemon = false)
         {
             H3DMaterialParams Params = Material.MaterialParams;
-            bool isPkmn = Params.ShaderReference.Contains("PokePack");
+            bool isPkmn = Params.ShaderReference.Contains("PokePack") || 
+                          Params.ShaderReference.Contains("BattleChar") || isPokemon;
 
             bool Quat  = Attributes.Any(x => x.Name == PICAAttributeName.Normal);
             bool VertA = Attributes.Any(x => x.Name == PICAAttributeName.Color);

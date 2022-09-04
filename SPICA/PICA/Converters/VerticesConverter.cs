@@ -112,7 +112,39 @@ namespace SPICA.PICA.Converters
             return Output;
         }
 
-        public static byte[] GetBuffer(IEnumerable<PICAVertex> Vertices, IEnumerable<PICAAttribute> Attributes)
+        public static int CalculateStride(IEnumerable<PICAAttribute> attributes)
+        {
+            int stride = 0;
+            foreach (var att in attributes)
+            {
+                stride += stride & 1;
+                stride += att.Elements * GetStride(att.Format);
+            }
+
+            //Make sure the stride is divisible into 4 because of hardware reasons
+            while (stride % 4 != 0)
+            {
+                stride += 1;
+            }
+            return stride;
+        }
+
+        static int GetStride(PICAAttributeFormat format)
+        {
+            switch (format)
+            {
+                case PICAAttributeFormat.Byte:
+                case PICAAttributeFormat.Ubyte:
+                    return 1;
+                case PICAAttributeFormat.Short:
+                    return 2;
+                case PICAAttributeFormat.Float:
+                    return 4;
+            }
+            return 4;
+        }
+
+        public static byte[] GetBuffer(IEnumerable<PICAVertex> Vertices, IEnumerable<PICAAttribute> Attributes, int stride = 0)
         {
             using (MemoryStream MS = new MemoryStream())
             {
@@ -120,6 +152,8 @@ namespace SPICA.PICA.Converters
 
                 foreach (PICAVertex Vertex in Vertices)
                 {
+                    var pos = Writer.BaseStream.Position;
+
                     int bi = 0;
                     int wi = 0;
 
@@ -143,12 +177,11 @@ namespace SPICA.PICA.Converters
 								default: Write(Writer, Attrib, 0); break;
                             }
                         }
-                        //Write extra alignment for certain elements
-                        if (Attrib.Format == PICAAttributeFormat.Byte || Attrib.Format == PICAAttributeFormat.Ubyte)
-                        {
-                            //Even out the size
-                            if (Attrib.Elements == 1 || Attrib.Elements == 3)
-                                Writer.BaseStream.Position += Writer.BaseStream.Position & 1;
+                    }
+                    if (stride != 0)
+                    {
+                        while (Writer.BaseStream.Position < pos + stride) {
+                            Writer.Write((byte)0);
                         }
                     }
                 }

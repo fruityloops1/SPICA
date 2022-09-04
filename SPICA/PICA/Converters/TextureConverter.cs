@@ -466,6 +466,18 @@ namespace SPICA.PICA.Converters
             return new byte[] { (byte)((color >> 24) & 0xFF) };
         }
 
+        public static int CalculateTotalSize(int width, int height, int mipCount, PICATextureFormat format)
+        {
+            int size = 0;
+            for (int level = 0; level < mipCount; level++)
+            {
+                int mwidth = Math.Max(1, width >> level);
+                int mheight = Math.Max(1, height >> level);
+                size += TextureConverter.CalculateLength(mwidth, mheight, format);
+            }
+            return size;
+        }
+
         public static int CalculateLength(int Width, int Height, PICATextureFormat Format)
         {
             int Length = (Width * Height * FmtBPP[(int)Format]) / 8;

@@ -73,10 +73,9 @@ namespace SPICA.Formats.CtrGfx.Animation
             uint NotExistMask = 1u << Vector.Length;
 
             long Position = Serializer.BaseStream.Position;
+            uint Flags = flags;
 
-            uint Flags = 0;
-
-          //  Serializer.Writer.Write(0u);
+            //  Serializer.Writer.Write(0u);
 
             for (int ElemIndex = 0; ElemIndex < Vector.Length; ElemIndex++)
             {
@@ -84,7 +83,7 @@ namespace SPICA.Formats.CtrGfx.Animation
                 {
                     Serializer.Sections[(uint)GfxSectionId.Contents].Values.Add(new RefValue()
                     {
-                        Value    = Vector[ElemIndex],
+                        Value = Vector[ElemIndex],
                         Position = Serializer.BaseStream.Position
                     });
 
@@ -103,12 +102,13 @@ namespace SPICA.Formats.CtrGfx.Animation
                 NotExistMask <<= 1;
             }
 
+
             SeekToFlags(
                  Serializer.BaseStream,
                  Serializer.FileVersion,
                  Position);
 
-            Serializer.Writer.Write(Flags);
+            Serializer.Writer.Write(flags);
 
             Serializer.BaseStream.Seek(Position + Vector.Length * 4, SeekOrigin.Begin);
         }
@@ -132,7 +132,7 @@ namespace SPICA.Formats.CtrGfx.Animation
         {
             BaseStream.Seek(Position - 0xc, SeekOrigin.Begin);
 
-            if (Revision <= 0x05000000)
+            if (Revision < 0x05000000)
             {
                 BaseStream.Seek(-8, SeekOrigin.Current);
             }

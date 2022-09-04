@@ -115,6 +115,17 @@ namespace SPICA.Rendering
 
         public void Delete(Renderer render)
         {
+            foreach (var tex in render.Textures)
+            {
+                if (TextureCache.ContainsKey(tex.Key))
+                    TextureCache.Remove(tex.Key);
+            }
+            foreach (var lut in render.LUTs)
+            {
+                if (LUTCache.ContainsKey(lut.Key))
+                    LUTCache.Remove(lut.Key);
+            }
+
             foreach (var Model in render.Models)
                 this.Models.Remove(Model);
             foreach (var tex in render.Textures)

@@ -41,6 +41,8 @@ namespace SPICA.Formats.CtrGfx.Animation
                 Deserializer.BaseStream.Seek(Deserializer.ReadPointer(), System.IO.SeekOrigin.Begin);
                 TextureList[i] = Deserializer.Deserialize<GfxTextureReference>();
             }
+
+            Deserializer.BaseStream.Position = pos;
         }
 
         bool ICustomSerialization.Serialize(BinarySerializer Serializer)
