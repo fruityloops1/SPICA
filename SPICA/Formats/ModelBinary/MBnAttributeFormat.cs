@@ -26,5 +26,17 @@ namespace SPICA.Formats.ModelBinary
                 default: throw new ArgumentException($"Invalid MBn Attribute format {AttrFmt}!");
             }
         }
+        public static MBnAttributeFormat ToMbnAttributeFormat(this PICAAttributeFormat AttrFmt)
+        {
+            switch (AttrFmt)
+            {
+                case PICAAttributeFormat.Float: return MBnAttributeFormat.Float;
+                case PICAAttributeFormat.Ubyte: return MBnAttributeFormat.Ubyte;
+                case PICAAttributeFormat.Byte: return MBnAttributeFormat.Byte;
+                case PICAAttributeFormat.Short: return MBnAttributeFormat.Short;
+
+                default: throw new ArgumentException($"Invalid MBn Attribute format {AttrFmt}!");
+            }
+        }
     }
 }

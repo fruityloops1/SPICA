@@ -165,6 +165,8 @@ namespace SPICA.Formats.Generic.COLLADA
                     H3DMesh Mesh = Mdl.Meshes[MeshIndex];
 
                     PICAVertex[] Vertices = MeshTransform.GetWorldSpaceVertices(Mdl.Skeleton, Mesh);
+                    if (Vertices.Length == 0)
+                        continue;
 
                     string MtlName = $"Mdl_{MdlIndex}_Mtl_{Mdl.Materials[Mesh.MaterialIndex].Name}";
                     string MtlTgt = library_materials[Mesh.MaterialIndex].id;

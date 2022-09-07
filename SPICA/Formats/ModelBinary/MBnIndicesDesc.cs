@@ -9,7 +9,9 @@ namespace SPICA.Formats.ModelBinary
         public ushort[] BoneIndices;
         public ushort[] Indices;
 
-        public uint PrimitivesCount;
+        private uint PrimitivesCount;
+
+        public MBnIndicesDesc() { }
 
         public MBnIndicesDesc(BinaryReader Reader, bool HasBuffer)
         {
@@ -45,6 +47,30 @@ namespace SPICA.Formats.ModelBinary
             }
 
             Reader.Align(4);
+        }
+
+        public void Write(BinaryWriter Writer, bool HasBuffer)
+        {
+            Writer.Write(BoneIndices.Length);
+            for (int Index = 0; Index < BoneIndices.Length; Index++)
+                Writer.Write((uint)BoneIndices[Index]);
+            Writer.Write(Indices.Length);
+
+            if (HasBuffer)
+                WriteBuffer(Writer, false);
+        }
+
+        public void WriteBuffer(BinaryWriter Writer, bool NeedsAlign)
+        {
+            if (NeedsAlign)
+            {
+                Writer.Align(0x20, 0xFF);
+            }
+
+            for (int Index = 0; Index < Indices.Length; Index++)
+                Writer.Write(Indices[Index]);
+
+            Writer.Align(4, 0xFF);
         }
     }
 }

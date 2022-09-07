@@ -9,17 +9,42 @@ namespace SPICA.Formats.CtrGfx
 {
     public class GfxMetaDataSingle : GfxMetaData
     {
-        [Inline] public readonly List<float> Values = new List<float>();
+        [Inline] public List<float> Values = new List<float>();
+
+        public GfxMetaDataSingle()
+        {
+            Type = GfxMetaDataType.Single;
+        }
+    }
+
+    public class GfxMetaDataVector3 : GfxMetaData
+    {
+        [Inline] public List<Vector3> Values = new List<Vector3>();
+
+        public GfxMetaDataVector3()
+        {
+            Type = GfxMetaDataType.Vector3;
+        }
     }
 
     public class GfxMetaDataColor : GfxMetaData
     {
-        [Inline] public readonly List<Vector4> Values = new List<Vector4>();
+        [Inline] public List<Vector4> Values = new List<Vector4>();
+
+        public GfxMetaDataColor()
+        {
+            Type = GfxMetaDataType.Color;
+        }
     }
 
     public class GfxMetaDataInteger : GfxMetaData
     {
-        [Inline] public readonly List<int> Values = new List<int>();
+        [Inline] public List<int> Values = new List<int>();
+
+        public GfxMetaDataInteger()
+        {
+            Type = GfxMetaDataType.Integer;
+        }
     }
 
     public class GfxMetaDataString : GfxMetaData
@@ -32,11 +57,12 @@ namespace SPICA.Formats.CtrGfx
         [TypeChoice((uint)GfxStringFormat.Utf8,    typeof(List<GfxStringUtf8>))]
         [TypeChoice((uint)GfxStringFormat.Utf16LE, typeof(List<GfxStringUtf16LE>))]
         [TypeChoice((uint)GfxStringFormat.Utf16BE, typeof(List<GfxStringUtf16BE>))]
-        public readonly IList Values;
+        public IList Values;
 
         public GfxMetaDataString()
         {
             Values = new List<string>();
+            Type = GfxMetaDataType.String;
         }
     }
 
@@ -55,5 +81,29 @@ namespace SPICA.Formats.CtrGfx
         }
 
         public GfxMetaDataType Type;
+
+        public IList GetValue()
+        {
+            if (this is GfxMetaDataSingle) return ((GfxMetaDataSingle)this).Values;
+            if (this is GfxMetaDataString) return ((GfxMetaDataString)this).Values;
+            if (this is GfxMetaDataInteger) return ((GfxMetaDataInteger)this).Values;
+            if (this is GfxMetaDataColor) return ((GfxMetaDataColor)this).Values;
+            if (this is GfxMetaDataVector3) return ((GfxMetaDataVector3)this).Values;
+            else return null;
+        }
+
+        public static GfxMetaData Create(GfxMetaDataType type, IList value)
+        {
+            switch (type)
+            {
+                case GfxMetaDataType.Single: return new GfxMetaDataSingle() { Values = (List<float>)value };
+                case GfxMetaDataType.String: return new GfxMetaDataString() { Values = (List<string>)value };
+                case GfxMetaDataType.Integer: return new GfxMetaDataInteger() { Values = (List<int>)value };
+                case GfxMetaDataType.Color: return new GfxMetaDataColor() { Values = (List<Vector4>)value };
+                case GfxMetaDataType.Vector3: return new GfxMetaDataVector3() { Values = (List<Vector3>)value };
+                default:
+                    return new GfxMetaDataString() { Values = (List<string>)value };
+            }
+        }
     }
 }

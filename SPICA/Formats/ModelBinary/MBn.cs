@@ -14,6 +14,10 @@ namespace SPICA.Formats.ModelBinary
     {
         public ushort Type;
 
+        private uint MeshFlags;
+        private uint VertexFlags;
+        private int MeshesCount;
+
         public readonly List<MBnIndicesDesc>  IndicesDesc;
         public readonly List<MBnVerticesDesc> VerticesDesc;
 
@@ -25,15 +29,38 @@ namespace SPICA.Formats.ModelBinary
             VerticesDesc = new List<MBnVerticesDesc>();
         }
 
-        public MBn(BinaryReader Reader, H3D BaseScene) : this()
+        public void Save(string filePath)
+        {
+            using (var FS = new FileStream(filePath, FileMode.Create, FileAccess.Write)) {
+                Save(FS);
+            }
+        }
+
+        public void Save(Stream stream)
+        {
+            Write(new BinaryWriter(stream));
+        }
+
+        public MBn(string filePath, H3D BaseScene) : this()
+        {
+            using (var FS = new FileStream(filePath, FileMode.Open, FileAccess.Read)) {
+                Read(new BinaryReader(FS), BaseScene);
+            }
+        }
+
+        public MBn(BinaryReader Reader, H3D BaseScene) : this() {
+            Read(Reader, BaseScene);
+        }
+
+        private void Read(BinaryReader Reader, H3D BaseScene)
         {
             this.BaseScene = BaseScene;
 
             Type = (ushort)Reader.ReadUInt32();
 
-            uint MeshFlags   = Reader.ReadUInt32();
-            uint VertexFlags = Reader.ReadUInt32();
-            int  MeshesCount = Reader.ReadInt32();
+            MeshFlags   = Reader.ReadUInt32();
+            VertexFlags = Reader.ReadUInt32();
+            MeshesCount = Reader.ReadInt32();
 
             bool HasSingleVerticesDesc = (VertexFlags & 1) != 0;
             bool HasBuiltInDataBuffer = Type == 4;
@@ -93,6 +120,106 @@ namespace SPICA.Formats.ModelBinary
                     {
                         IndicesDesc[IndicesIndex++].ReadBuffer(Reader, true);
                     }
+                }
+            }
+        }
+
+        private void Write(BinaryWriter Writer)
+        {
+            Writer.Write((ushort)Type);
+            Writer.Write((ushort)0xFFFF);
+            Writer.Write(MeshFlags);
+            Writer.Write(VertexFlags);
+            Writer.Write(MeshesCount);
+
+            bool HasSingleVerticesDesc = (VertexFlags & 1) != 0;
+            bool HasBuiltInDataBuffer = Type == 4;
+
+            if (HasSingleVerticesDesc)
+            {
+                /*
+                 * This is used when all meshes inside the file uses the same vertex format.
+                 * This save some file space by only storing this information once.
+                 * In this case the file will have only one big vertex buffer at the beggining,
+                 * and all meshes will use that buffer.
+                 */
+                VerticesDesc[0].Write(Writer, HasBuiltInDataBuffer);
+            }
+
+            int id = 0;
+            for (int i = 0; i < MeshesCount; i++)
+            {
+                //Sub mesh count
+                int subMeshCount = HasSingleVerticesDesc ? 1 : VerticesDesc[i].SubMeshesCount; 
+                Writer.Write(subMeshCount);
+                for (int j = 0; j < subMeshCount; j++)
+                    IndicesDesc[id++].Write(Writer, HasBuiltInDataBuffer);
+
+                if (!HasSingleVerticesDesc)
+                    VerticesDesc[i].Write(Writer, HasBuiltInDataBuffer);
+            }
+
+            if (HasSingleVerticesDesc)
+            {
+                //This is used when the model only have one vertex buffer at the beggining.
+                for (int i = 0; i < IndicesDesc.Count; i++)
+                {
+                    if (i == 0 && !HasBuiltInDataBuffer)
+                        VerticesDesc[0].WriteBuffer(Writer, true);
+                    else if (i > 0)
+                        VerticesDesc.Add(VerticesDesc[0]);
+
+                    if (!HasBuiltInDataBuffer)
+                        IndicesDesc[i].WriteBuffer(Writer, true);
+                }
+            }
+            else if (!HasBuiltInDataBuffer)
+            {
+                //This is used when the file have various vertex/index buffer after the descriptors.
+                int IndicesIndex = 0;
+
+                for (int i = 0; i < MeshesCount; i++)
+                {
+                    VerticesDesc[i].WriteBuffer(Writer, true);
+
+                    for (int j = 0; j < VerticesDesc[i].SubMeshesCount; j++)
+                        IndicesDesc[IndicesIndex++].WriteBuffer(Writer, true);
+                }
+            }
+        }
+
+        public void FromH3D(H3DModel Model)
+        {
+            VerticesDesc.Clear();
+            IndicesDesc.Clear();
+            MeshesCount = Model.Meshes.Count;
+
+            bool HasSingleVerticesDesc = (VertexFlags & 1) != 0;
+
+            int shapeID = 0;
+            foreach (var mesh in Model.Meshes)
+            {
+                if (!mesh.MetaData.Contains("ShapeId"))
+                    mesh.MetaData.Add(new H3DMetaDataValue("ShapeId", new int[] { shapeID++ }));
+
+                //Indices desciptors per sub mesh
+                for (int j = 0; j < mesh.SubMeshes.Count; j++)
+                {
+                    IndicesDesc.Add(new MBnIndicesDesc()
+                    {
+                        BoneIndices = mesh.SubMeshes[j].BoneIndices,
+                        Indices = mesh.SubMeshes[j].Indices,
+                    });
+                }
+                //Add vertex info per mesh or only once depending on flags
+                if (!HasSingleVerticesDesc || HasSingleVerticesDesc && VerticesDesc.Count == 0)
+                {
+                    var vertexDesc = new MBnVerticesDesc();
+                    vertexDesc.Attributes = mesh.Attributes;
+                    vertexDesc.SubMeshesCount = mesh.SubMeshes.Count;
+                    vertexDesc.RawBuffer = mesh.RawBuffer;
+                    vertexDesc.VertexStride = mesh.VertexStride;
+                    VerticesDesc.Add(vertexDesc);
                 }
             }
         }

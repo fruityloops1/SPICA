@@ -8,13 +8,18 @@ namespace SPICA.Formats.ModelBinary
 {
     public class MBnVerticesDesc
     {
-        public readonly List<PICAAttribute> Attributes;
+        public List<PICAAttribute> Attributes;
 
         public byte[] RawBuffer;
 
         public int BufferLength;
         public int SubMeshesCount;
         public int VertexStride;
+
+        public MBnVerticesDesc()
+        {
+
+        }
 
         public MBnVerticesDesc(BinaryReader Reader, int SubMeshesCount, bool HasBuffer)
         {
@@ -88,6 +93,20 @@ namespace SPICA.Formats.ModelBinary
             }
         }
 
+        public void Write(BinaryWriter Writer, bool HasBuffer)
+        {
+            Writer.Write(Attributes.Count);
+            for (int Index = 0; Index < Attributes.Count; Index++)
+            {
+                Writer.Write((uint)Attributes[Index].Name.ToMbnAttributeName());
+                Writer.Write((uint)Attributes[Index].Format.ToMbnAttributeFormat());
+                Writer.Write(Attributes[Index].Scale);
+            }
+            Writer.Write(RawBuffer != null ? RawBuffer.Length : 0);
+            if (HasBuffer)
+                WriteBuffer(Writer, false);
+        }
+
         public void ReadBuffer(BinaryReader Reader, bool NeedsAlign)
         {
             if (NeedsAlign)
@@ -98,6 +117,15 @@ namespace SPICA.Formats.ModelBinary
             RawBuffer = Reader.ReadBytes(BufferLength);
 
             Reader.Align(4);
+        }
+
+        public void WriteBuffer(BinaryWriter Writer, bool NeedsAlign)
+        {
+            if (NeedsAlign)
+                Writer.Align(0x20, 0xFF);
+
+            Writer.Write(RawBuffer);
+            Writer.Align(4, 0xFF);
         }
     }
 }

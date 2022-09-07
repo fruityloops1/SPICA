@@ -110,6 +110,8 @@ namespace SPICA.Formats.CtrGfx.Model.Material
             this.Flags = (GfxMaterialFlags)material.MaterialParams.Flags;
             this.FragmentShader.Lighting.TranslucencyKind = (GfxTranslucencyKind)material.MaterialParams.TranslucencyKind;
             this.TexCoordConfig = (GfxTexCoordConfig)material.MaterialParams.TexCoordConfig;
+            this.LightSetIndex = material.MaterialParams.LightSetIndex;
+            this.FogIndex = material.MaterialParams.FogIndex;
             this.Colors.Emission = material.MaterialParams.EmissionColor;
             this.Colors.Ambient = material.MaterialParams.AmbientColor;
             this.Colors.Diffuse = material.MaterialParams.DiffuseColor;
@@ -336,6 +338,8 @@ namespace SPICA.Formats.CtrGfx.Model.Material
 
             Mat.MaterialParams.ModelReference = $"{Mat.Name}@{modelName}";
             Mat.MaterialParams.ShaderReference = "0@DefaultShader";
+            Mat.MaterialParams.LightSetIndex = (ushort)this.LightSetIndex;
+            Mat.MaterialParams.FogIndex = (ushort)this.FogIndex;
 
             Mat.MaterialParams.Flags = (H3DMaterialFlags)this.Flags;
 

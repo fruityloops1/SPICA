@@ -32,5 +32,21 @@ namespace SPICA.Formats.ModelBinary
                 default: throw new ArgumentException($"Invalid or unimplemented MBn Attribute name {AttrName}!");
             }
         }
+
+        public static MBnAttributeName ToMbnAttributeName(this PICAAttributeName AttrName)
+        {
+            switch (AttrName)
+            {
+                case PICAAttributeName.Position: return MBnAttributeName.Position;
+                case PICAAttributeName.Normal: return MBnAttributeName.Normal;
+                case PICAAttributeName.Color: return MBnAttributeName.Color;
+                case PICAAttributeName.TexCoord0: return MBnAttributeName.TexCoord0;
+                case PICAAttributeName.TexCoord1: return MBnAttributeName.TexCoord1;
+                case PICAAttributeName.BoneIndex: return MBnAttributeName.BoneIndex;
+                case PICAAttributeName.BoneWeight: return MBnAttributeName.BoneWeight;
+
+                default: throw new ArgumentException($"Invalid or unimplemented MBn Attribute name {AttrName}!");
+            }
+        }
     }
 }

@@ -58,6 +58,8 @@ namespace SPICA.Formats.CtrGfx.LUT
                     RawCommands[i + 2] << 16 |
                     RawCommands[i + 3] << 24);
             }
+            Console.WriteLine($"RawCommands {RawCommands.Length} Commands {Commands.Length}");
+
             uint Index = 0;
 
             PICACommandReader Reader = new PICACommandReader(Commands);
@@ -65,6 +67,8 @@ namespace SPICA.Formats.CtrGfx.LUT
             while (Reader.HasCommand)
             {
                 PICACommand Cmd = Reader.GetCommand();
+                Console.WriteLine($"LUT Cmd {Cmd.Register}");
+
                 if (Cmd.Register == PICARegister.GPUREG_LIGHTING_LUT_INDEX)
                 {
                     Index = Cmd.Parameters[0] & 0xff;
@@ -115,6 +119,8 @@ namespace SPICA.Formats.CtrGfx.LUT
                     writer.Write(Commands[i]);
             }
             RawCommands = mem.ToArray();
+
+            Console.WriteLine($"Saved RawCommands {RawCommands.Length} Commands {Commands.Length}");
 
             return false;
         }
