@@ -565,19 +565,17 @@ namespace SPICA.Rendering
             }
         }
 
-        public void Render()
+        public void RenderLayer1() => RenderMeshes(Meshes0);
+        public void RenderLayer2() => RenderMeshes(Meshes1);
+        public void RenderLayer3() => RenderMeshes(Meshes2);
+        public void RenderLayer4() => RenderMeshes(Meshes3);
+
+
+        private void RenderMeshes(IEnumerable<Mesh> Meshes)
         {
             if (!BaseModel.IsVisible)
                 return;
 
-            RenderMeshes(Meshes0);
-            RenderMeshes(Meshes1);
-            RenderMeshes(Meshes2);
-            RenderMeshes(Meshes3);
-        }
-
-        private void RenderMeshes(IEnumerable<Mesh> Meshes)
-        {
             Transform = this.BaseModel.WorldTransform.ToMatrix4();
 
             int index = 0;

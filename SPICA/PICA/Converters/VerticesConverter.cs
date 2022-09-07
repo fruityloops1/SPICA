@@ -112,21 +112,44 @@ namespace SPICA.PICA.Converters
             return Output;
         }
 
-        public static int CalculateStride(IEnumerable<PICAAttribute> attributes)
+        public static int CalculateStride(IEnumerable<PICAAttribute> attributes, bool alignBy4 = false)
         {
-            int stride = 0;
+            int VertexStride = 0;
             foreach (var att in attributes)
             {
-                stride += stride & 1;
-                stride += att.Elements * GetStride(att.Format);
-            }
+                /*
+             * Byte attributes that are not aligned on a 2 bytes boundary (for example, Byte Vector3)
+             * needs to be aligned to a 2 byte boundary, so we insert a 1 byte dummy element to force alignment.
+             * Attributes of the same type doesn't need to be aligned however.
+             * For example:
+             * A Byte Vector3 Normal followed by a Byte Vector4 Color, followed by a Short Vector2 TexCoord is
+             * stored like this: NX NY NZ CR CG CB CA <Padding0> TX TX TY TY
+             */
+                if (att.Format != PICAAttributeFormat.Ubyte &&
+                    att.Format != PICAAttributeFormat.Byte)
+                {
+                    VertexStride += VertexStride & 1;
+                }
 
-            //Make sure the stride is divisible into 4 because of hardware reasons
-            while (stride % 4 != 0)
-            {
-                stride += 1;
+                int Size = att.Elements;
+
+                switch (att.Format)
+                {
+                    case PICAAttributeFormat.Short: Size <<= 1; break;
+                    case PICAAttributeFormat.Float: Size <<= 2; break;
+                }
+
+                VertexStride += Size;
             }
-            return stride;
+            VertexStride += VertexStride & 1;
+
+            if (alignBy4)
+            {
+                //Make sure the stride is divisible into 4
+                while (VertexStride % 4 != 0)
+                    VertexStride += 1;
+            }
+            return VertexStride;
         }
 
         static int GetStride(PICAAttributeFormat format)
@@ -146,6 +169,9 @@ namespace SPICA.PICA.Converters
 
         public static byte[] GetBuffer(IEnumerable<PICAVertex> Vertices, IEnumerable<PICAAttribute> Attributes, int stride = 0)
         {
+            if (stride == 0)
+                stride = CalculateStride(Attributes);
+
             using (MemoryStream MS = new MemoryStream())
             {
                 BinaryWriter Writer = new BinaryWriter(MS);

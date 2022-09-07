@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using SPICA.Serialization;
+﻿using SPICA.Serialization;
 using SPICA.Serialization.Attributes;
 using SPICA.Serialization.Serializer;
 
@@ -7,7 +6,6 @@ using System.IO;
 
 namespace SPICA.Formats.CtrGfx.Animation
 {
-    [JsonObject(ItemTypeNameHandling = TypeNameHandling.All)]
     public class GfxAnimTransform : ICustomSerialization
     {
         [Ignore] private GfxFloatKeyFrameGroup _ScaleX;
@@ -40,8 +38,6 @@ namespace SPICA.Formats.CtrGfx.Animation
 
         public bool TranslationExists => _TranslationX.Exists || _TranslationY.Exists || _TranslationZ.Exists;
 
-        private uint Flags;
-
         public GfxAnimTransform()
         {
             _ScaleX       = new GfxFloatKeyFrameGroup();
@@ -61,13 +57,12 @@ namespace SPICA.Formats.CtrGfx.Animation
         {
             long Position = Deserializer.BaseStream.Position;
 
-            Flags = GfxAnimVector.GetFlagsFromElem(Deserializer, Position - 4);
+            uint Flags = GfxAnimVector.GetFlagsFromElem(Deserializer, Position);
 
             uint ConstantMask = (uint)GfxAnimTransformFlags.IsScaleXConstant;
             uint NotExistMask = (uint)GfxAnimTransformFlags.IsScaleXInexistent;
-           // Position += 4;
 
-            for (int ElemIndex = 0; ElemIndex < 9; ElemIndex++)
+            for (int ElemIndex = 0; ElemIndex < 10; ElemIndex++)
             {
                 Deserializer.BaseStream.Seek(Position, SeekOrigin.Begin);
 
@@ -76,12 +71,9 @@ namespace SPICA.Formats.CtrGfx.Animation
                 bool Constant = (Flags & ConstantMask) != 0;
                 bool Exists   = (Flags & NotExistMask) == 0;
 
-                Console.WriteLine($"ElemIndex {ElemIndex} Exists {Exists} Constant {Constant}");
-
                 if (Exists)
                 {
                     GfxFloatKeyFrameGroup FrameGrp = GfxFloatKeyFrameGroup.ReadGroup(Deserializer, Constant);
-                    Console.WriteLine($"FrameGrp {FrameGrp.KeyFrames.Count} {FrameGrp.KeyFrames[0].Value}");
 
                     switch (ElemIndex)
                     {
@@ -112,8 +104,6 @@ namespace SPICA.Formats.CtrGfx.Animation
             long Position = Serializer.BaseStream.Position;
 
             GfxAnimTransformFlags Flags = 0;
-
-            Serializer.Writer.Write(0u);
 
             for (int ElemIndex = 0; ElemIndex < 10; ElemIndex++)
             {
@@ -168,7 +158,7 @@ namespace SPICA.Formats.CtrGfx.Animation
                 NotExistMask <<= 1;
             }
 
-            GfxAnimVector.WriteFlagsToElem(Serializer, Position, (uint)this.Flags);
+            GfxAnimVector.WriteFlagsToElem(Serializer, Position, (uint)Flags);
 
             Serializer.BaseStream.Seek(Position + 4 + 9 * 4, SeekOrigin.Begin);
 

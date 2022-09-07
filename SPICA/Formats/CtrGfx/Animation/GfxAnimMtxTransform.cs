@@ -1,11 +1,9 @@
-﻿using Newtonsoft.Json;
-using SPICA.Math3D;
+﻿using SPICA.Math3D;
 
 using System.Collections.Generic;
 
 namespace SPICA.Formats.CtrGfx.Animation
 {
-    [JsonObject(ItemTypeNameHandling = TypeNameHandling.All)]
     public class GfxAnimMtxTransform
     {
         public float StartFrame;

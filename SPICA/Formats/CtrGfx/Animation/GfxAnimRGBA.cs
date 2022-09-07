@@ -1,10 +1,8 @@
-﻿using Newtonsoft.Json;
-using SPICA.Serialization;
+﻿using SPICA.Serialization;
 using SPICA.Serialization.Attributes;
 
 namespace SPICA.Formats.CtrGfx.Animation
 {
-    [JsonObject(ItemTypeNameHandling = TypeNameHandling.All)]
     public class GfxAnimRGBA : ICustomSerialization
     {
         [Ignore] private GfxFloatKeyFrameGroup[] Vector;

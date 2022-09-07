@@ -194,7 +194,11 @@ namespace SPICA.Formats.ModelBinary
             IndicesDesc.Clear();
             MeshesCount = Model.Meshes.Count;
 
-            bool HasSingleVerticesDesc = (VertexFlags & 1) != 0;
+            //Check for same attributes used
+            var attributeList= Model.Meshes.SelectMany(x => x.Attributes).Distinct().ToList(); 
+            bool HasSingleVerticesDesc = attributeList.Count == 1;
+            VertexFlags = (uint)(HasSingleVerticesDesc ? 1 : 0);
+            MeshFlags = 0; //No idea what these do
 
             int shapeID = 0;
             foreach (var mesh in Model.Meshes)

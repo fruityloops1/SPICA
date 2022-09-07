@@ -49,17 +49,14 @@ namespace SPICA.Formats.CtrGfx.Animation
         public GfxAnimation()
         {
             Elements = new GfxDict<GfxAnimationElement>();
-            MetaData = new GfxDict<GfxMetaData>();
-            this.Header.MagicNumber = 0x4D4E4143;
-            this.Header.Revision    = 117440512;
         }
 
         public H3DAnimation ToH3DAnimation()
         {
             H3DAnimation Output = new H3DAnimation()
             {
-                Name = _Name,
-                FramesCount = FramesCount,
+                Name           = _Name,
+                FramesCount    = FramesCount,
                 AnimationFlags = (H3DAnimationFlags)LoopMode
             };
             if (TargetAnimGroupName == "MaterialAnimation")
@@ -74,18 +71,18 @@ namespace SPICA.Formats.CtrGfx.Animation
 
             switch (TargetAnimGroupName)
             {
-                case "SkeletalAnimation": Output.AnimationType = H3DAnimationType.Skeletal; break;
-                case "MaterialAnimation": Output.AnimationType = H3DAnimationType.Material; break;
+                case "SkeletalAnimation":   Output.AnimationType = H3DAnimationType.Skeletal;   break;
+                case "MaterialAnimation":   Output.AnimationType = H3DAnimationType.Material;   break;
                 case "VisibilityAnimation": Output.AnimationType = H3DAnimationType.Visibility; break;
-                case "LightAnimation": Output.AnimationType = H3DAnimationType.Light; break;
-                case "CameraAnimation": Output.AnimationType = H3DAnimationType.Camera; break;
-                case "FogAnimation": Output.AnimationType = H3DAnimationType.Fog; break;
+                case "LightAnimation":      Output.AnimationType = H3DAnimationType.Light;      break;
+                case "CameraAnimation":     Output.AnimationType = H3DAnimationType.Camera;     break;
+                case "FogAnimation":        Output.AnimationType = H3DAnimationType.Fog;        break;
             }
 
             foreach (GfxAnimationElement Elem in Elements)
             {
                 switch (Elem.PrimitiveType)
-                {
+            	{
                     case GfxPrimitiveType.Float:
                         {
                             H3DAnimFloat Float = new H3DAnimFloat();
@@ -121,7 +118,7 @@ namespace SPICA.Formats.CtrGfx.Animation
                                         case 0: TargetType = H3DTargetType.MaterialTexCoord0Rot; break;
                                         case 1: TargetType = H3DTargetType.MaterialTexCoord1Rot; break;
                                         case 2: TargetType = H3DTargetType.MaterialTexCoord2Rot; break;
-                                    }
+                                    }                                    
                                 }
                             }
 
@@ -129,10 +126,10 @@ namespace SPICA.Formats.CtrGfx.Animation
                             {
                                 Output.Elements.Add(new H3DAnimationElement()
                                 {
-                                    Name = Name,
-                                    Content = Float,
+                                    Name          = Name,
+                                    Content       = Float,
                                     PrimitiveType = H3DPrimitiveType.Float,
-                                    TargetType = TargetType
+                                    TargetType    = TargetType
                                 });
                             }
                         }
@@ -145,9 +142,9 @@ namespace SPICA.Formats.CtrGfx.Animation
                             GfxAnimBoolean Source = (GfxAnimBoolean)Elem.Content;
 
                             Bool.StartFrame = Source.StartFrame;
-                            Bool.EndFrame = Source.EndFrame;
+                            Bool.EndFrame   = Source.EndFrame;
 
-                            Bool.PreRepeat = (H3DLoopType)Source.PreRepeat;
+                            Bool.PreRepeat  = (H3DLoopType)Source.PreRepeat;
                             Bool.PostRepeat = (H3DLoopType)Source.PostRepeat;
 
                             CopyList(Source.Values, Bool.Values);
@@ -157,21 +154,21 @@ namespace SPICA.Formats.CtrGfx.Animation
                             Match Path = Regex.Match(Elem.Name, MeshNodeVisREx);
                             Match PathVis = Regex.Match(Elem.Name, MeshVisREx);
 
-                            if (Path.Success || PathVis.Success)
+                            if (Path.Success)
                             {
                                 TargetType = H3DTargetType.MeshNodeVisibility;
                             }
 
-                            if (TargetType != 0)
+                            if (Path.Success && TargetType != 0)
                             {
                                 string Name = PathVis.Success ? $"Meshes[{PathVis.Groups[1].Value}]" : Path.Groups[1].Value;
 
                                 Output.Elements.Add(new H3DAnimationElement()
                                 {
-                                    Name = Name,
-                                    Content = Bool,
+                                    Name          = Name,
+                                    Content       = Bool,
                                     PrimitiveType = H3DPrimitiveType.Boolean,
-                                    TargetType = TargetType
+                                    TargetType    = TargetType
                                 });
                             }
                         }
@@ -215,10 +212,10 @@ namespace SPICA.Formats.CtrGfx.Animation
 
                                     Output.Elements.Add(new H3DAnimationElement()
                                     {
-                                        Name = Name,
-                                        Content = Vector,
+                                        Name          = Name,
+                                        Content       = Vector,
                                         PrimitiveType = H3DPrimitiveType.Vector2D,
-                                        TargetType = TargetType
+                                        TargetType    = TargetType
                                     });
                                 }
                             }
@@ -237,8 +234,8 @@ namespace SPICA.Formats.CtrGfx.Animation
 
                             switch (Elem.Name)
                             {
-                                case ViewUpdaterTarget: TargetType = H3DTargetType.CameraTargetPos; break;
-                                case ViewUpdaterUpVec: TargetType = H3DTargetType.CameraUpVector; break;
+                                case ViewUpdaterTarget: TargetType = H3DTargetType.CameraTargetPos;    break;
+                                case ViewUpdaterUpVec:  TargetType = H3DTargetType.CameraUpVector;     break;
                                 case ViewUpdaterRotate: TargetType = H3DTargetType.CameraViewRotation; break;
                             }
 
@@ -246,10 +243,10 @@ namespace SPICA.Formats.CtrGfx.Animation
                             {
                                 Output.Elements.Add(new H3DAnimationElement()
                                 {
-                                    Name = Elem.Name,
-                                    Content = Vector,
+                                    Name          = Elem.Name,
+                                    Content       = Vector,
                                     PrimitiveType = H3DPrimitiveType.Vector3D,
-                                    TargetType = TargetType
+                                    TargetType    = TargetType
                                 });
                             }
                         }
@@ -259,13 +256,13 @@ namespace SPICA.Formats.CtrGfx.Animation
                         {
                             H3DAnimTransform Transform = new H3DAnimTransform();
 
-                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).ScaleX, Transform.ScaleX);
-                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).ScaleY, Transform.ScaleY);
-                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).ScaleZ, Transform.ScaleZ);
+                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).ScaleX,       Transform.ScaleX);
+                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).ScaleY,       Transform.ScaleY);
+                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).ScaleZ,       Transform.ScaleZ);
 
-                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).RotationX, Transform.RotationX);
-                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).RotationY, Transform.RotationY);
-                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).RotationZ, Transform.RotationZ);
+                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).RotationX,    Transform.RotationX);
+                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).RotationY,    Transform.RotationY);
+                            CopyKeyFrames(((GfxAnimTransform)Elem.Content).RotationZ,    Transform.RotationZ);
 
                             CopyKeyFrames(((GfxAnimTransform)Elem.Content).TranslationX, Transform.TranslationX);
                             CopyKeyFrames(((GfxAnimTransform)Elem.Content).TranslationY, Transform.TranslationY);
@@ -275,17 +272,17 @@ namespace SPICA.Formats.CtrGfx.Animation
 
                             switch (Output.AnimationType)
                             {
-                                case H3DAnimationType.Skeletal: TargetType = H3DTargetType.Bone; break;
-                                case H3DAnimationType.Camera: TargetType = H3DTargetType.CameraTransform; break;
-                                case H3DAnimationType.Light: TargetType = H3DTargetType.LightTransform; break;
+                                case H3DAnimationType.Skeletal: TargetType = H3DTargetType.Bone;            break;
+                                case H3DAnimationType.Camera:   TargetType = H3DTargetType.CameraTransform; break;
+                                case H3DAnimationType.Light:    TargetType = H3DTargetType.LightTransform;  break;
                             }
 
                             Output.Elements.Add(new H3DAnimationElement()
                             {
-                                Name = Elem.Name,
-                                Content = Transform,
+                                Name          = Elem.Name,
+                                Content       = Transform,
                                 PrimitiveType = H3DPrimitiveType.Transform,
-                                TargetType = TargetType
+                                TargetType    = TargetType
                             });
                         }
                         break;
@@ -307,9 +304,9 @@ namespace SPICA.Formats.CtrGfx.Animation
                             {
                                 switch (Path.Groups[2].Value)
                                 {
-                                    case "Emission": TargetType = H3DTargetType.MaterialEmission; break;
-                                    case "Ambient": TargetType = H3DTargetType.MaterialAmbient; break;
-                                    case "Diffuse": TargetType = H3DTargetType.MaterialDiffuse; break;
+                                    case "Emission":  TargetType = H3DTargetType.MaterialEmission;  break;
+                                    case "Ambient":   TargetType = H3DTargetType.MaterialAmbient;   break;
+                                    case "Diffuse":   TargetType = H3DTargetType.MaterialDiffuse;   break;
                                     case "Specular0": TargetType = H3DTargetType.MaterialSpecular0; break;
                                     case "Specular1": TargetType = H3DTargetType.MaterialSpecular1; break;
                                     case "Constant0": TargetType = H3DTargetType.MaterialConstant0; break;
@@ -341,10 +338,10 @@ namespace SPICA.Formats.CtrGfx.Animation
 
                                 Output.Elements.Add(new H3DAnimationElement()
                                 {
-                                    Name = Name,
-                                    Content = RGBA,
+                                    Name          = Name,
+                                    Content       = RGBA,
                                     PrimitiveType = H3DPrimitiveType.RGBA,
-                                    TargetType = TargetType
+                                    TargetType    = TargetType
                                 });
                             }
                         }
@@ -354,16 +351,16 @@ namespace SPICA.Formats.CtrGfx.Animation
                         {
                             H3DAnimQuatTransform QuatTransform = new H3DAnimQuatTransform();
 
-                            CopyList(((GfxAnimQuatTransform)Elem.Content).Scales, QuatTransform.Scales);
-                            CopyList(((GfxAnimQuatTransform)Elem.Content).Rotations, QuatTransform.Rotations);
+                            CopyList(((GfxAnimQuatTransform)Elem.Content).Scales,       QuatTransform.Scales);
+                            CopyList(((GfxAnimQuatTransform)Elem.Content).Rotations,    QuatTransform.Rotations);
                             CopyList(((GfxAnimQuatTransform)Elem.Content).Translations, QuatTransform.Translations);
 
                             Output.Elements.Add(new H3DAnimationElement()
                             {
-                                Name = Elem.Name,
-                                Content = QuatTransform,
+                                Name          = Elem.Name,
+                                Content       = QuatTransform,
                                 PrimitiveType = H3DPrimitiveType.QuatTransform,
-                                TargetType = H3DTargetType.Bone
+                                TargetType    = H3DTargetType.Bone
                             });
                         }
                         break;
@@ -375,19 +372,19 @@ namespace SPICA.Formats.CtrGfx.Animation
                             GfxAnimMtxTransform Source = (GfxAnimMtxTransform)Elem.Content;
 
                             MtxTransform.StartFrame = Source.StartFrame;
-                            MtxTransform.EndFrame = Source.EndFrame;
+                            MtxTransform.EndFrame   = Source.EndFrame;
 
-                            MtxTransform.PreRepeat = (H3DLoopType)Source.PreRepeat;
+                            MtxTransform.PreRepeat  = (H3DLoopType)Source.PreRepeat;
                             MtxTransform.PostRepeat = (H3DLoopType)Source.PostRepeat;
 
                             CopyList(Source.Frames, MtxTransform.Frames);
 
                             Output.Elements.Add(new H3DAnimationElement()
                             {
-                                Name = Elem.Name,
-                                Content = MtxTransform,
+                                Name          = Elem.Name,
+                                Content       = MtxTransform,
                                 PrimitiveType = H3DPrimitiveType.MtxTransform,
-                                TargetType = H3DTargetType.Bone
+                                TargetType    = H3DTargetType.Bone
                             });
                         }
                         break;
@@ -445,7 +442,8 @@ namespace SPICA.Formats.CtrGfx.Animation
 
             foreach (var elem in animation.Elements)
             {
-                string MaterialTarget(string target) {
+                string MaterialTarget(string target)
+                {
                     return @"Materials[\" + '"' + elem.Name + @"\" + '"' + @"]." + target;
                 }
 

@@ -13,9 +13,9 @@ namespace SPICA.Formats.CtrGfx.Animation
     [JsonObject(ItemTypeNameHandling = TypeNameHandling.All)]
     public class GfxAnimQuatTransform : ICustomSerialization
     {
-        [Ignore] public readonly List<Vector3>    Scales;
+        [Ignore] public readonly List<Vector3> Scales;
         [Ignore] public readonly List<Quaternion> Rotations;
-        [Ignore] public readonly List<Vector3>    Translations;
+        [Ignore] public readonly List<Vector3> Translations;
 
         [Ignore] public byte[] Unknown;
 
@@ -23,8 +23,8 @@ namespace SPICA.Formats.CtrGfx.Animation
         [Ignore] public readonly List<uint> RFlags;
         [Ignore] public readonly List<uint> TFlags;
 
-        public bool HasScale       => Scales.Count       > 0;
-        public bool HasRotation    => Rotations.Count    > 0;
+        public bool HasScale => Scales.Count > 0;
+        public bool HasRotation => Rotations.Count > 0;
         public bool HasTranslation => Translations.Count > 0;
 
         [Ignore] private uint CurveRelPtr;
@@ -35,8 +35,8 @@ namespace SPICA.Formats.CtrGfx.Animation
 
         public GfxAnimQuatTransform()
         {
-            Scales       = new List<Vector3>();
-            Rotations    = new List<Quaternion>();
+            Scales = new List<Vector3>();
+            Rotations = new List<Quaternion>();
             Translations = new List<Vector3>();
             SFlags = new List<uint>();
             RFlags = new List<uint>();
@@ -62,16 +62,16 @@ namespace SPICA.Formats.CtrGfx.Animation
             for (int ElemIndex = 0; ElemIndex < 3; ElemIndex++)
             {
                 bool Constant = (DFlags & ConstantMask) != 0;
-                bool Exists   = (DFlags & NotExistMask) == 0;
+                bool Exists = (DFlags & NotExistMask) == 0;
 
                 if (Exists)
                 {
                     Deserializer.BaseStream.Seek(Addresses[ElemIndex], SeekOrigin.Begin);
 
-                    StartFrame  = Deserializer.Reader.ReadSingle();
-                    float EndFrame    = Deserializer.Reader.ReadSingle();
+                    StartFrame = Deserializer.Reader.ReadSingle();
+                    float EndFrame = Deserializer.Reader.ReadSingle();
                     CurveRelPtr = Deserializer.Reader.ReadUInt32();
-                    bool IsConstant  = Deserializer.Reader.ReadUInt32() != 0;
+                    bool IsConstant = Deserializer.Reader.ReadUInt32() != 0;
 
                     int Count = IsConstant ? 1 : (int)(EndFrame - StartFrame + 1);
 
@@ -117,7 +117,7 @@ namespace SPICA.Formats.CtrGfx.Animation
 
                 switch (ElemIndex)
                 {
-                    case 0: Elem = Rotations;    break;
+                    case 0: Elem = Rotations; break;
                     case 1: Elem = Translations; break;
                     case 2: Elem = Scales; break;
                 }

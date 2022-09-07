@@ -115,12 +115,26 @@ namespace SPICA.Formats.CtrH3D.Texture
 
         public byte[] ToRGBA(int Face = 0)
         {
-            return TextureConverter.DecodeBuffer(BufferFromFace(Face), Width, Height, Format);
+            try
+            {
+                return TextureConverter.DecodeBuffer(BufferFromFace(Face), Width, Height, Format);
+            }
+            catch
+            {
+                return new byte[Width * Height * 4];
+            }
         }
 
         public System.Drawing.Bitmap ToBitmap(int Face = 0)
         {
-            return TextureConverter.DecodeBitmap(BufferFromFace(Face), Width, Height, Format);
+            try
+            {
+                return TextureConverter.DecodeBitmap(BufferFromFace(Face), Width, Height, Format);
+            }
+            catch
+            {
+                return new System.Drawing.Bitmap(Width, Height);
+            }
         }
 
         public System.Drawing.Bitmap ToMipBitmap(int level, int Face = 0)
@@ -132,9 +146,16 @@ namespace SPICA.Formats.CtrH3D.Texture
 
         public byte[] ToMipRGBA(int level, int Face = 0)
         {
-            return TextureConverter.DecodeBuffer(GetMipmap(BufferFromFace(Face), level),
-       Math.Max(1, this.Width >> level),
-       Math.Max(1, this.Height >> level), Format);
+            try
+            {
+                return TextureConverter.DecodeBuffer(GetMipmap(BufferFromFace(Face), level),
+                    Math.Max(1, this.Width >> level),
+                    Math.Max(1, this.Height >> level), Format);
+            }
+            catch
+            {
+                return new byte[Math.Max(1, this.Width >> level) * Math.Max(1, this.Height >> level) * 4];
+            }
         }
 
         private byte[] GetMipmap(byte[] data, int level)

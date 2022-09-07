@@ -1,10 +1,8 @@
 ﻿using SPICA.Serialization;
 using SPICA.Serialization.Attributes;
-using Newtonsoft.Json;
 
 namespace SPICA.Formats.CtrGfx.Animation
 {
-    [JsonObject(ItemTypeNameHandling = TypeNameHandling.All)]
     public class GfxAnimFloat : ICustomSerialization
     {
         [Ignore] private GfxFloatKeyFrameGroup _Value;
@@ -18,7 +16,7 @@ namespace SPICA.Formats.CtrGfx.Animation
 
         void ICustomSerialization.Deserialize(BinaryDeserializer Deserializer)
         {
-            GfxAnimVector.SetVector(Deserializer, ref _Value);
+            GfxAnimVector.SetVector(Deserializer, _Value);
         }
 
         bool ICustomSerialization.Serialize(BinarySerializer Serializer)

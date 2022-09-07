@@ -28,11 +28,18 @@ namespace SPICA.Formats.CtrGfx.Animation
 
         void ICustomSerialization.Deserialize(BinaryDeserializer Deserializer)
         {
-            Flags = GfxAnimVector.SetVector(Deserializer, Vector);
+            long Position = Deserializer.BaseStream.Position;
+
+            GfxAnimVector.SetVector(Deserializer, Vector);
+
+            //Seek back to read texture pattern list
+            Deserializer.BaseStream.Seek(Position + 4, SeekOrigin.Begin);
+
             uint numTextures = Deserializer.Reader.ReadUInt32();
             Deserializer.BaseStream.Seek(Deserializer.ReadPointer(), System.IO.SeekOrigin.Begin);
 
             long pos = Deserializer.BaseStream.Position;
+            var version = Deserializer.FileVersion;
 
             TextureList = new GfxTextureReference[numTextures];
             for (int i = 0; i < numTextures; i++)
@@ -42,12 +49,14 @@ namespace SPICA.Formats.CtrGfx.Animation
                 TextureList[i] = Deserializer.Deserialize<GfxTextureReference>();
             }
 
-            Deserializer.BaseStream.Position = pos;
+            //Seek back
+            Deserializer.FileVersion = version;
+            Deserializer.BaseStream.Seek(Position + 4, SeekOrigin.Begin);
         }
 
         bool ICustomSerialization.Serialize(BinarySerializer Serializer)
         {
-            GfxAnimVector.WriteVector(Serializer, Vector,Flags);
+            GfxAnimVector.WriteVector(Serializer, Vector);
 
             Serializer.Writer.Write(TextureList.Length);
             Serializer.Writer.Write(4);

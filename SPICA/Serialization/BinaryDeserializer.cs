@@ -259,7 +259,7 @@ namespace SPICA.Serialization
 
                     if (Type.IsValueType || Type.IsEnum || Inline)
                     {
-                        FieldValue = IsList(Type)
+                            FieldValue = IsList(Type)
                             ? ReadList(Type, Info)
                             : ReadValue(Type);
 

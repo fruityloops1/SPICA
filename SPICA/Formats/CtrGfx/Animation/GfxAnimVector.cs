@@ -7,10 +7,9 @@ namespace SPICA.Formats.CtrGfx.Animation
 {
     static class GfxAnimVector
     {
-        public static uint SetVector(BinaryDeserializer Deserializer, GfxFloatKeyFrameGroup[] Vector)
+        public static void SetVector(BinaryDeserializer Deserializer, GfxFloatKeyFrameGroup[] Vector)
         {
             long Position = Deserializer.BaseStream.Position;
-            long pos = Deserializer.BaseStream.Position;
 
             uint Flags = GetFlagsFromElem(Deserializer, Position);
 
@@ -34,13 +33,9 @@ namespace SPICA.Formats.CtrGfx.Animation
                 ConstantMask <<= 1;
                 NotExistMask <<= 1;
             }
-
-            Deserializer.BaseStream.Seek(pos + (4 * Vector.Length), SeekOrigin.Begin);
-
-            return Flags;
         }
 
-        public static void SetVector(BinaryDeserializer Deserializer, ref GfxFloatKeyFrameGroup Vector)
+        public static void SetVector(BinaryDeserializer Deserializer, GfxFloatKeyFrameGroup Vector)
         {
             uint Flags = GetFlagsFromElem(Deserializer, Deserializer.BaseStream.Position);
 
@@ -67,15 +62,14 @@ namespace SPICA.Formats.CtrGfx.Animation
             return Flags;
         }
 
-        public static void WriteVector(BinarySerializer Serializer, GfxFloatKeyFrameGroup[] Vector, uint flags = 0)
+        public static void WriteVector(BinarySerializer Serializer, GfxFloatKeyFrameGroup[] Vector)
         {
             uint ConstantMask = 1u;
             uint NotExistMask = 1u << Vector.Length;
 
             long Position = Serializer.BaseStream.Position;
-            uint Flags = flags;
 
-            //  Serializer.Writer.Write(0u);
+            uint Flags = 0;
 
             for (int ElemIndex = 0; ElemIndex < Vector.Length; ElemIndex++)
             {
@@ -83,7 +77,7 @@ namespace SPICA.Formats.CtrGfx.Animation
                 {
                     Serializer.Sections[(uint)GfxSectionId.Contents].Values.Add(new RefValue()
                     {
-                        Value = Vector[ElemIndex],
+                        Value    = Vector[ElemIndex],
                         Position = Serializer.BaseStream.Position
                     });
 
@@ -102,15 +96,9 @@ namespace SPICA.Formats.CtrGfx.Animation
                 NotExistMask <<= 1;
             }
 
+            WriteFlagsToElem(Serializer, Position, Flags);
 
-            SeekToFlags(
-                 Serializer.BaseStream,
-                 Serializer.FileVersion,
-                 Position);
-
-            Serializer.Writer.Write(flags);
-
-            Serializer.BaseStream.Seek(Position + Vector.Length * 4, SeekOrigin.Begin);
+            Serializer.BaseStream.Seek(Position + 4 + Vector.Length * 4, SeekOrigin.Begin);
         }
 
         public static void WriteVector(BinarySerializer Serializer, GfxFloatKeyFrameGroup Vector)
@@ -132,7 +120,7 @@ namespace SPICA.Formats.CtrGfx.Animation
         {
             BaseStream.Seek(Position - 0xc, SeekOrigin.Begin);
 
-            if (Revision < 0x05000000)
+            if (Revision <= 0x05000000)
             {
                 BaseStream.Seek(-8, SeekOrigin.Current);
             }

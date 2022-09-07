@@ -37,8 +37,6 @@ namespace SPICA.Formats.CtrGfx.Animation
 
         public bool Exists => KeyFrames.Count > 0;
 
-        [Ignore] private uint FormatFlagsU32;
-
         public GfxFloatKeyFrameGroup()
         {
             KeyFrames = new List<KeyFrame>();
@@ -65,8 +63,6 @@ namespace SPICA.Formats.CtrGfx.Animation
             uint  FormatFlags = Deserializer.Reader.ReadUInt32();
             int   KeysCount   = Deserializer.Reader.ReadInt32();
             float InvDuration = Deserializer.Reader.ReadSingle();
-
-            FormatFlagsU32 = FormatFlags;
 
             Quantization = (KeyFrameQuantization)(FormatFlags >> 5);
 
@@ -171,7 +167,6 @@ namespace SPICA.Formats.CtrGfx.Animation
 
             Serializer.Writer.Write((uint)CurveFlags);
 
-
             if (KeyFrames.Count < 2)
             {
                 if (KeyFrames.Count > 0)
@@ -236,6 +231,7 @@ namespace SPICA.Formats.CtrGfx.Animation
             else
             {
                 uint Address = Deserializer.ReadPointer();
+
                 Deserializer.BaseStream.Seek(Address, SeekOrigin.Begin);
 
                 FrameGrp = Deserializer.Deserialize<GfxFloatKeyFrameGroup>();

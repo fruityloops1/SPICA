@@ -222,10 +222,15 @@ namespace SPICA.Rendering
         public void Render()
         {
             foreach (Model Model in Models)
-            {
-                Model.Render();
-            }
+                Model.RenderLayer1();
+            foreach (Model Model in Models)
+                Model.RenderLayer2();
+            foreach (Model Model in Models)
+                Model.RenderLayer3();
+            foreach (Model Model in Models)
+                Model.RenderLayer4();
         }
+
 
         public void UpdateAllShaders()
         {

@@ -15,5 +15,12 @@ namespace SPICA.Formats.CtrGfx.Model.Material
         }
 
         private uint ShaderPtr;
+
+        public GfxShaderReference()
+        {
+            this.Header.MagicNumber = 0x52444853;
+            this.Header.Revision = 0x6000000;
+            this.Path = "DefaultShader";
+        }
     }
 }
