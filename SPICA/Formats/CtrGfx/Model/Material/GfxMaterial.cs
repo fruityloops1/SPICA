@@ -125,6 +125,7 @@ namespace SPICA.Formats.CtrGfx.Model.Material
             this.Colors.Constant5 = material.MaterialParams.Constant5Color;
             this.Colors.Scale = material.MaterialParams.ColorScale;
             this.Rasterization.IsPolygonOffsetEnabled = false;
+            this.RenderLayer = material.MaterialParams.RenderLayer;
 
             if (material.MaterialParams.Flags.HasFlag(H3DMaterialFlags.IsPolygonOffsetEnabled))
             {
@@ -137,6 +138,7 @@ namespace SPICA.Formats.CtrGfx.Model.Material
             this.FragmentOperation.Depth.ColorMask = material.MaterialParams.DepthColorMask;
             this.FragmentOperation.Depth.Flags = GfxFragOpDepthFlags.IsTestEnabled | GfxFragOpDepthFlags.IsMaskEnabled;
 
+            this.FragmentOperation.Blend.Mode = material.MaterialParams.BlendMode;
             this.FragmentOperation.Blend.ColorOperation = material.MaterialParams.ColorOperation;
             this.FragmentOperation.Blend.LogicalOperation = material.MaterialParams.LogicalOperation;
             this.FragmentOperation.Blend.Function = material.MaterialParams.BlendFunction;
@@ -391,6 +393,7 @@ namespace SPICA.Formats.CtrGfx.Model.Material
             Mat.MaterialParams.LogicalOperation = this.FragmentOperation.Blend.LogicalOperation;
             Mat.MaterialParams.BlendFunction = this.FragmentOperation.Blend.Function;
             Mat.MaterialParams.BlendColor = this.FragmentOperation.Blend.Color;
+            Mat.MaterialParams.BlendMode = this.FragmentOperation.Blend.Mode;
 
             Mat.MaterialParams.StencilOperation = this.FragmentOperation.Stencil.Operation;
             Mat.MaterialParams.StencilTest = this.FragmentOperation.Stencil.Test;

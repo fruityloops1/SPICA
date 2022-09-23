@@ -35,7 +35,7 @@ namespace SPICA.Formats.CtrGfx.Animation
             }
         }
 
-        public static void SetVector(BinaryDeserializer Deserializer, GfxFloatKeyFrameGroup Vector)
+        public static void SetVector(BinaryDeserializer Deserializer, ref GfxFloatKeyFrameGroup Vector)
         {
             uint Flags = GetFlagsFromElem(Deserializer, Deserializer.BaseStream.Position);
 
@@ -98,7 +98,7 @@ namespace SPICA.Formats.CtrGfx.Animation
 
             WriteFlagsToElem(Serializer, Position, Flags);
 
-            Serializer.BaseStream.Seek(Position + 4 + Vector.Length * 4, SeekOrigin.Begin);
+            Serializer.BaseStream.Seek(Position + Vector.Length * 4, SeekOrigin.Begin);
         }
 
         public static void WriteVector(BinarySerializer Serializer, GfxFloatKeyFrameGroup Vector)

@@ -37,5 +37,10 @@ namespace SPICA.Formats.CtrGfx.Model.Material
                 return MS.ToArray();
             }
         }
+
+        public override string ToString()
+        {
+            return $"{Flags} {TranslucencyKind} {FresnelSelector} {BumpTexture} {BumpMode} {IsBumpRenormalize}";
+        }
     }
 }

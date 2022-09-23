@@ -147,7 +147,11 @@ namespace SPICA.Formats.CtrH3D.Model.Material
             Output.MaterialParams.DepthBufferRead  = true;
             Output.MaterialParams.DepthBufferWrite = true;
 
-            Output.MaterialParams.TexEnvStages[0] = PICATexEnvStage.Texture0;
+            if (!string.IsNullOrEmpty(TextureName))
+                Output.MaterialParams.TexEnvStages[0] = PICATexEnvStage.Texture0;
+            else
+                Output.MaterialParams.TexEnvStages[0] = PICATexEnvStage.VertexColor;
+
             Output.MaterialParams.TexEnvStages[1] = PICATexEnvStage.PassThrough;
             Output.MaterialParams.TexEnvStages[2] = PICATexEnvStage.PassThrough;
             Output.MaterialParams.TexEnvStages[3] = PICATexEnvStage.PassThrough;
@@ -183,7 +187,9 @@ namespace SPICA.Formats.CtrH3D.Model.Material
             Output.EnabledTextures[0] = true;
 
             Output.Name         = MaterialName;
-            Output.Texture0Name = TextureName;
+
+            if (!string.IsNullOrEmpty(TextureName))
+                Output.Texture0Name = TextureName;
 
             return Output;
         }
@@ -207,6 +213,7 @@ namespace SPICA.Formats.CtrH3D.Model.Material
             this.MaterialParams.BlendFunction.AlphaDstFunc = PICABlendFunc.Zero;
             this.MaterialParams.BlendFunction.AlphaEquation = PICABlendEquation.FuncAdd;
             this.MaterialParams.BlendFunction.ColorEquation = PICABlendEquation.FuncAdd;
+            this.MaterialParams.BlendMode = GfxFragOpBlendMode.None;
 
             this.MaterialParams.BlendColor = new RGBA(0, 0, 0, 255);
         }
@@ -229,6 +236,7 @@ namespace SPICA.Formats.CtrH3D.Model.Material
             this.MaterialParams.BlendFunction.AlphaDstFunc = PICABlendFunc.OneMinusSourceAlpha;
             this.MaterialParams.BlendFunction.AlphaEquation = PICABlendEquation.FuncAdd;
             this.MaterialParams.BlendFunction.ColorEquation = PICABlendEquation.FuncAdd;
+            this.MaterialParams.BlendMode = GfxFragOpBlendMode.BlendSeparate;
         }
 
         public void SetTransparent()
@@ -254,6 +262,7 @@ namespace SPICA.Formats.CtrH3D.Model.Material
             this.MaterialParams.BlendFunction.ColorEquation = PICABlendEquation.FuncAdd;
 
             this.MaterialParams.BlendColor = new RGBA(0, 0, 0, 255);
+            this.MaterialParams.BlendMode = GfxFragOpBlendMode.None;
         }
 
         public void SetTranslucent()
@@ -275,6 +284,7 @@ namespace SPICA.Formats.CtrH3D.Model.Material
             this.MaterialParams.BlendFunction.AlphaDstFunc = PICABlendFunc.OneMinusSourceAlpha;
             this.MaterialParams.BlendFunction.AlphaEquation = PICABlendEquation.FuncAdd;
             this.MaterialParams.BlendFunction.ColorEquation = PICABlendEquation.FuncAdd;
+            this.MaterialParams.BlendMode = GfxFragOpBlendMode.Blend;
         }
         public H3DMaterial()
         {
@@ -296,6 +306,8 @@ namespace SPICA.Formats.CtrH3D.Model.Material
 
                 uint Param = Cmd.Parameters[0];
 
+                Console.WriteLine($"Register {Cmd.Register} params {string.Join(",", Cmd.Parameters)}");
+
                 switch (Cmd.Register)
                 {
                     case PICARegister.GPUREG_TEXUNIT_CONFIG:
@@ -304,7 +316,8 @@ namespace SPICA.Formats.CtrH3D.Model.Material
                         EnabledTextures[2] = (Param & 0x004) != 0;
                         EnabledTextures[3] = (Param & 0x400) != 0;
                         break;
-                }            }
+                }
+            }
 
             if (TextureMappersCompat != null)
             {
@@ -344,12 +357,25 @@ namespace SPICA.Formats.CtrH3D.Model.Material
             TexUnitConfig |= (EnabledTextures[2] ? 1u : 0u) << 2;
             TexUnitConfig |= (EnabledTextures[3] ? 1u : 0u) << 10;
 
-            if (Serializer.FileVersion >= 34)
-                Writer.SetCommands(PICARegister.GPUREG_TEXUNIT_CONFIG, false, 0, 0, 0, 0, 0x1001, 0xF0080);
-            else
-                Writer.SetCommands(PICARegister.GPUREG_TEXUNIT_CONFIG, false, 0, 0, 0, 0);
 
-            Writer.SetCommand(PICARegister.GPUREG_TEXUNIT_CONFIG, TexUnitConfig);
+            if (Serializer.FileVersion >= 34)
+            {
+                Writer.SetCommands(PICARegister.GPUREG_TEXUNIT_CONFIG, false, 0, 0, 0, 0);
+                Writer.SetCommand(PICARegister.GPUREG_TEXUNIT_CONFIG, TexUnitConfig);
+                Writer.SetCommand(PICARegister.GPUREG_TEXUNIT_CONFIG, 4103);
+
+                Console.WriteLine($"TexUnitConfig {TexUnitConfig}");
+            }
+            else
+            {
+                Writer.SetCommands(PICARegister.GPUREG_TEXUNIT_CONFIG, false, 0, 0, 0, 0);
+                Writer.SetCommand(PICARegister.GPUREG_TEXUNIT_CONFIG, TexUnitConfig);
+            }
+            /*    Writer.SetCommands(PICARegister.GPUREG_TEXUNIT_CONFIG, false, 0, 0, 0, 0, 0x1001, 0xF0080);
+                else
+                    Writer.SetCommands(PICARegister.GPUREG_TEXUNIT_CONFIG, false, 0, 0, 0, 0);
+                */
+
 
             Writer.SetCommand(PICARegister.GPUREG_TEXUNIT0_BORDER_COLOR, 0);
             Writer.SetCommand(PICARegister.GPUREG_TEXUNIT0_DIM, 0);

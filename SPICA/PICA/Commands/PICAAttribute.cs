@@ -9,6 +9,11 @@ namespace SPICA.PICA.Commands
         public int Elements;
         public float Scale;
 
+        public override string ToString()
+        {
+            return $"{Name} {Format} {Elements} {Scale}";
+        }
+
         public static List<PICAAttribute> GetAttributes(params PICAAttributeName[] Names)
         {
             List<PICAAttribute> Output = new List<PICAAttribute>();

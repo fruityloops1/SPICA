@@ -57,6 +57,21 @@ namespace SPICA.PICA.Commands
             }
         }
 
+        public static PICATexEnvStage VertexColor
+        {
+            get
+            {
+                //Does TextureRGB * SecondaryColor, and TextureA is used unmodified
+                //Note: This is meant to be used on the first stage
+                PICATexEnvStage Output = new PICATexEnvStage();
+
+                Output.Source.Color[0] = PICATextureCombinerSource.PrimaryColor;
+                Output.Source.Alpha[0] = PICATextureCombinerSource.PrimaryColor;
+
+                return Output;
+            }
+        }
+
         public static PICATexEnvStage PassThrough
         {
             get

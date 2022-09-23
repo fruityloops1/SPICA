@@ -49,6 +49,9 @@ namespace SPICA.Formats.CtrGfx.Animation
         public GfxAnimation()
         {
             Elements = new GfxDict<GfxAnimationElement>();
+            MetaData = new GfxDict<GfxMetaData>();
+            this.Header.MagicNumber = 0x4D4E4143;
+            this.Header.Revision = 117440512;
         }
 
         public H3DAnimation ToH3DAnimation()

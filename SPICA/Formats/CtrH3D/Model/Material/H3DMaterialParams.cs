@@ -152,6 +152,8 @@ namespace SPICA.Formats.CtrH3D.Model.Material
 
         [Ignore] public RGBA TexEnvBufferColor;
 
+        [Ignore] public CtrGfx.Model.Material.GfxFragOpBlendMode BlendMode;
+
         [Ignore] public PICAColorOperation ColorOperation;
 
         [Ignore] public PICABlendFunction BlendFunction;

@@ -17,8 +17,6 @@ namespace SPICA.Formats.CtrGfx.Animation
         [Ignore] public readonly List<Quaternion> Rotations;
         [Ignore] public readonly List<Vector3> Translations;
 
-        [Ignore] public byte[] Unknown;
-
         [Ignore] public readonly List<uint> SFlags;
         [Ignore] public readonly List<uint> RFlags;
         [Ignore] public readonly List<uint> TFlags;
@@ -30,8 +28,6 @@ namespace SPICA.Formats.CtrGfx.Animation
         [Ignore] private uint CurveRelPtr;
 
         [Ignore] private float StartFrame;
-
-        [Ignore] private uint DFlags;
 
         public GfxAnimQuatTransform()
         {
@@ -47,8 +43,8 @@ namespace SPICA.Formats.CtrGfx.Animation
         {
             Deserializer.BaseStream.Seek(-0xc, SeekOrigin.Current);
 
-            DFlags = Deserializer.Reader.ReadUInt32();
-            Unknown = Deserializer.Reader.ReadBytes(8);
+            var Flags = Deserializer.Reader.ReadUInt32();
+            Deserializer.Reader.ReadBytes(8);
 
             uint[] Addresses = new uint[3];
 
@@ -61,8 +57,8 @@ namespace SPICA.Formats.CtrGfx.Animation
 
             for (int ElemIndex = 0; ElemIndex < 3; ElemIndex++)
             {
-                bool Constant = (DFlags & ConstantMask) != 0;
-                bool Exists = (DFlags & NotExistMask) == 0;
+                bool Constant = (Flags & ConstantMask) != 0;
+                bool Exists = (Flags & NotExistMask) == 0;
 
                 if (Exists)
                 {
@@ -110,6 +106,11 @@ namespace SPICA.Formats.CtrGfx.Animation
             long DescPosition = Serializer.BaseStream.Position;
             long DataPosition = DescPosition + 0xc;
 
+            int[] indices = new int[]
+            {
+                1, 2, 0
+            };
+
             for (int ElemIndex = 0; ElemIndex < 3; ElemIndex++)
             {
                 IList Elem = null;
@@ -117,7 +118,7 @@ namespace SPICA.Formats.CtrGfx.Animation
 
                 switch (ElemIndex)
                 {
-                    case 0: Elem = Rotations; break;
+                    case 0: Elem =  Rotations; break;
                     case 1: Elem = Translations; break;
                     case 2: Elem = Scales; break;
                 }
@@ -153,31 +154,26 @@ namespace SPICA.Formats.CtrGfx.Animation
                         {
                             Serializer.Writer.Write((Quaternion)Vector);
                         }
-
                         //TODO: Segment Flags
                         Serializer.Writer.Write((uint)FlagList[idx++]);
                     }
 
-                    if (Elem.Count == 1)
+                    if (Elem.Count == 1) //Flag unused?
                     {
-                        Flags |= (GfxAnimQuatTransformFlags)ConstantMask;
+                       // Flags |= (GfxAnimQuatTransformFlags)(ConstantMask >> indices[ElemIndex]);
                     }
 
                     DataPosition = Serializer.BaseStream.Position;
                 }
                 else
                 {
-                    Flags |= (GfxAnimQuatTransformFlags)NotExistMask;
+                    Flags |= (GfxAnimQuatTransformFlags)(NotExistMask >> indices[ElemIndex]);
                 }
-
-                ConstantMask >>= 1;
-                NotExistMask >>= 1;
             }
 
             Serializer.BaseStream.Seek(DescPosition - 0xc, SeekOrigin.Begin);
 
-            Serializer.Writer.Write((uint)DFlags);
-            Serializer.Writer.Write(Unknown);
+            Serializer.Writer.Write((uint)Flags);
 
             Serializer.BaseStream.Seek(DataPosition, SeekOrigin.Begin);
 

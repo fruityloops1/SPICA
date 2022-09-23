@@ -195,8 +195,11 @@ namespace SPICA.Formats.ModelBinary
             MeshesCount = Model.Meshes.Count;
 
             //Check for same attributes used
-            var attributeList= Model.Meshes.SelectMany(x => x.Attributes).Distinct().ToList(); 
-            bool HasSingleVerticesDesc = attributeList.Count == 1;
+            var attributeList = Model.Meshes.Select(x => string.Join("", x.Attributes.Select(x => x.ToString()))).Distinct().ToList();
+            var sameBuffers = Model.Meshes.All(x => x.RawBuffer.Length == Model.Meshes[0].RawBuffer.Length);
+
+            bool HasSingleVerticesDesc = attributeList.Count == 1 && sameBuffers;
+
             VertexFlags = (uint)(HasSingleVerticesDesc ? 1 : 0);
             MeshFlags = 0; //No idea what these do
 
@@ -211,7 +214,7 @@ namespace SPICA.Formats.ModelBinary
                 {
                     IndicesDesc.Add(new MBnIndicesDesc()
                     {
-                        BoneIndices = mesh.SubMeshes[j].BoneIndices,
+                        BoneIndices = mesh.SubMeshes[j].BoneIndices.Take(mesh.SubMeshes[j].BoneIndicesCount).ToArray(),
                         Indices = mesh.SubMeshes[j].Indices,
                     });
                 }

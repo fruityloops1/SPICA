@@ -6,6 +6,7 @@ using SPICA.Formats.CtrGfx.Model;
 using SPICA.Formats.CtrGfx.Model.Material;
 using SPICA.Formats.CtrGfx.Model.Mesh;
 using SPICA.Formats.CtrGfx.Texture;
+using SPICA.Formats.CtrGfx.Shader;
 using SPICA.Serialization.Attributes;
 
 namespace SPICA.Formats.CtrGfx
@@ -26,6 +27,7 @@ namespace SPICA.Formats.CtrGfx
     [TypeChoice(0x40000222, typeof(GfxVertexLight))]
     [TypeChoice(0x40000422, typeof(GfxAmbientLight))]
     [TypeChoice(0x80000001, typeof(GfxShaderReference))]
+    [TypeChoice(0x80000002, typeof(GfxShader))]
     public class GfxObject : INamed
     {
         protected GfxRevHeader Header;

@@ -67,8 +67,6 @@ namespace SPICA.Formats.CtrGfx.LUT
             while (Reader.HasCommand)
             {
                 PICACommand Cmd = Reader.GetCommand();
-                Console.WriteLine($"LUT Cmd {Cmd.Register}");
-
                 if (Cmd.Register == PICARegister.GPUREG_LIGHTING_LUT_INDEX)
                 {
                     Index = Cmd.Parameters[0] & 0xff;
@@ -107,6 +105,8 @@ namespace SPICA.Formats.CtrGfx.LUT
             PICACommandWriter Writer = new PICACommandWriter();
 
             Writer.SetCommands(PICARegister.GPUREG_LIGHTING_LUT_DATA0, false, 0xf, QuantizedValues);
+
+            //Todo unsure why but WriteEnd() breaks commands executing afterwards so skip using it for now...
 
             Writer.WriteEnd();
 

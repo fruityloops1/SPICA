@@ -1,8 +1,10 @@
-﻿using SPICA.Serialization;
+﻿using Newtonsoft.Json;
+using SPICA.Serialization;
 using SPICA.Serialization.Attributes;
 
 namespace SPICA.Formats.CtrGfx.Model.Material
 {
+    [JsonObject(ItemTypeNameHandling = TypeNameHandling.All)]
     public class GfxShaderParam : ICustomSerialization
     {
         public string Name;

@@ -16,7 +16,7 @@ namespace SPICA.Formats.CtrGfx.Animation
 
         void ICustomSerialization.Deserialize(BinaryDeserializer Deserializer)
         {
-            GfxAnimVector.SetVector(Deserializer, _Value);
+            GfxAnimVector.SetVector(Deserializer, ref _Value);
         }
 
         bool ICustomSerialization.Serialize(BinarySerializer Serializer)

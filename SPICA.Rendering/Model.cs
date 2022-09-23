@@ -692,6 +692,10 @@ namespace SPICA.Rendering
                 GL.Uniform1(GL.GetUniformLocation(Shader.Handle, FragmentShaderGenerator.DebugModeUniform), Renderer.DebugShadingMode);
                 GL.Uniform1(GL.GetUniformLocation(Shader.Handle, FragmentShaderGenerator.DebugLUTModeUniform), Renderer.DebugLUTShadingMode);
 
+                Shader.SetVtxVector4(DefaultShaderIds.HsLGCol, new Vector4(0.56471f, 0.34118f, 0.03529f, 0.00f));
+                Shader.SetVtxVector4(DefaultShaderIds.HsLSCol, new Vector4(0.46275f, 0.76078f, 0.87059f, 0.00f));
+                Shader.SetVtxVector4(DefaultShaderIds.HsLSDir, new Vector4(0.0f, 0.95703f, 0.28998f, 0.40f));
+
                 bool isSelected = Mesh.BaseMesh.IsSelected || MP.SelectionColor.W > 0;
 
                 Mesh.Texture0Name = MS.Texture0Name;

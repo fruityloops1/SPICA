@@ -245,7 +245,7 @@ namespace SPICA.Formats.CtrH3D.Texture
                 }
             }
 
-            int Length = TextureConverter.CalculateLength(Width, Height, Format);
+            int Length = TextureConverter.CalculateTotalSize(Width, Height, MipmapSize, Format);
 
             long Position = Deserializer.BaseStream.Position;
 
@@ -331,7 +331,7 @@ namespace SPICA.Formats.CtrH3D.Texture
             {
                 Parent   = this,
                 Value    = RawBufferXPos,
-                Position = Position
+                Position = Position,
             });
         }
     }

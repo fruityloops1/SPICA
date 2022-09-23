@@ -140,7 +140,18 @@ namespace SPICA.Formats.CtrH3D.Model.Mesh
             }
         }
 
-        public void UpdateBoolUniforms(H3DMaterial Material, bool isPokemon = false)
+        public void UpdateHemiLight(H3DMaterial Material)
+        {
+            bool IsHemiL = Material.MaterialParams.Flags.HasFlag(H3DMaterialFlags.IsHemiSphereLightingEnabled);
+            bool isHemiO = Material.MaterialParams.Flags.HasFlag(H3DMaterialFlags.IsHemiSphereOcclusionEnabled);
+            foreach (H3DSubMesh SM in SubMeshes)
+            {
+                SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsHemiL, 5);
+                SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, isHemiO, 6);
+            }
+        }
+
+        public void UpdateBoolUniforms(H3DMaterial Material, bool isPokemon = false, bool isSmashBros = false)
         {
             H3DMaterialParams Params = Material.MaterialParams;
             bool isPkmn = Params.ShaderReference.Contains("PokePack") || 
@@ -153,6 +164,9 @@ namespace SPICA.Formats.CtrH3D.Model.Mesh
             bool IsTex0 = Material.EnabledTextures[0];
             bool IsTex1 = Material.EnabledTextures[1];
             bool IsTex2 = Material.EnabledTextures[2];
+
+            bool IsHemiL = Material.MaterialParams.Flags.HasFlag(H3DMaterialFlags.IsHemiSphereLightingEnabled);
+            bool isHemiO = Material.MaterialParams.Flags.HasFlag(H3DMaterialFlags.IsHemiSphereOcclusionEnabled);
 
             bool UVMap0 = Params.TextureCoords[0].MappingType == H3DTextureMappingType.UvCoordinateMap && IsTex0;
             bool UVMap1 = Params.TextureCoords[1].MappingType == H3DTextureMappingType.UvCoordinateMap && IsTex1;
@@ -172,7 +186,10 @@ namespace SPICA.Formats.CtrH3D.Model.Mesh
                 {
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsSmoSk, 1);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsRgdSk, 2);
-                    SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, Quat, 15);
+
+                    SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsHemiL, 5);
+                    SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, isHemiO, 6);
+
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, VertA, 7);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, BoneW, 8);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, UVMap0, 9);
@@ -180,12 +197,18 @@ namespace SPICA.Formats.CtrH3D.Model.Mesh
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, UVMap2, 11);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsTex1, 13);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsTex2, 14);
+
+                    SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, Quat, 15);
                 }
                 else
                 {
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsSmoSk, 1);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsRgdSk, 2);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, Quat, 3);
+
+                    SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, IsHemiL, 5);
+                    SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, isHemiO, 6);
+
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, VertA, 7);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, BoneW, 8);
                     SM.BoolUniforms = (ushort)BitUtils.SetBit(SM.BoolUniforms, UVMap0, 9);
