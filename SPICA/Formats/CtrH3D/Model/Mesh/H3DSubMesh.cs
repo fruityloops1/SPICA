@@ -192,7 +192,8 @@ namespace SPICA.Formats.CtrH3D.Model.Mesh
             {
                 Parent   = this,
                 Value    = Data,
-                Position = Position
+                Position = Position,
+                Padding = 0x10,
             });
         }
     }

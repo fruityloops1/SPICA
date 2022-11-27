@@ -229,9 +229,16 @@ namespace SPICA.Formats.CtrGfx.Model.Material
                 TPIndex++;
             }
 
-            GfxFragmentFlags DstFlags = 0;
+            GfxFragmentFlags DstFlags = this.FragmentShader.Lighting.Flags;
             H3DFragmentFlags SrcFlags = material.MaterialParams.FragmentFlags;
             this.FragmentShader.Lighting.IsBumpRenormalize = false;
+
+            DstFlags &= ~GfxFragmentFlags.IsClampHighLightEnabled;
+            DstFlags &= ~GfxFragmentFlags.IsLUTDist0Enabled;
+            DstFlags &= ~GfxFragmentFlags.IsLUTDist1Enabled;
+            DstFlags &= ~GfxFragmentFlags.IsLUTGeoFactor0Enabled;
+            DstFlags &= ~GfxFragmentFlags.IsLUTGeoFactor1Enabled;
+            DstFlags &= ~GfxFragmentFlags.IsLUTReflectionEnabled;
 
             if (SrcFlags.HasFlag(H3DFragmentFlags.IsClampHighLightEnabled))
                 DstFlags |= GfxFragmentFlags.IsClampHighLightEnabled;
@@ -255,6 +262,7 @@ namespace SPICA.Formats.CtrGfx.Model.Material
                 this.FragmentShader.Lighting.IsBumpRenormalize = true;
 
             this.FragmentShader.Lighting.Flags = DstFlags;
+
             this.FragmentShader.Lighting.FresnelSelector = (GfxFresnelSelector)material.MaterialParams.FresnelSelector;
             this.FragmentShader.Lighting.BumpTexture = material.MaterialParams.BumpTexture;
             this.FragmentShader.Lighting.BumpMode = (GfxBumpMode)material.MaterialParams.BumpMode;
@@ -327,7 +335,7 @@ namespace SPICA.Formats.CtrGfx.Model.Material
             this.FragmentShader.AlphaTest.Test = material.MaterialParams.AlphaTest;
             this.FragmentShader.TexEnvBufferColor = material.MaterialParams.TexEnvBufferColor;
 
-            this.UsedTextureCoordsCount = 3;
+            this.UsedTextureCoordsCount = this.TextureCoords.Where(x => x.Scale.X != 0).ToList().Count;
 
             this.Shader.Name = "";
             this.Shader.Path = "DefaultShader";

@@ -331,8 +331,6 @@ namespace SPICA.Formats.CtrH3D.Model.Mesh
 
             RawBuffer = Deserializer.Reader.ReadBytes(BufferCount * VertexStride);
 
-            var vertices = GetVertices();
-
             Deserializer.BaseStream.Seek(Position, SeekOrigin.Begin);
         }
 
@@ -477,7 +475,8 @@ namespace SPICA.Formats.CtrH3D.Model.Mesh
                 {
                     Parent   = this,
                     Value    = RawBuffer,
-                    Position = Position + 0x30
+                    Position = Position + 0x30,
+                    Padding = 0x10,
                 });
 
                 H3DRelocator.AddCmdReloc(Serializer, H3DSection.BaseAddress,   Position + 0x20);

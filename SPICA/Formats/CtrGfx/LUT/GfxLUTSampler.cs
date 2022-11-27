@@ -108,7 +108,7 @@ namespace SPICA.Formats.CtrGfx.LUT
 
             //Todo unsure why but WriteEnd() breaks commands executing afterwards so skip using it for now...
 
-            Writer.WriteEnd();
+            //Writer.WriteEnd();
 
             var Commands = Writer.GetBuffer();
 
@@ -118,9 +118,8 @@ namespace SPICA.Formats.CtrGfx.LUT
                 for (int i = 0; i < Commands.Length; i++)
                     writer.Write(Commands[i]);
             }
-            RawCommands = mem.ToArray();
 
-            Console.WriteLine($"Saved RawCommands {RawCommands.Length} Commands {Commands.Length}");
+            RawCommands = mem.ToArray();
 
             return false;
         }

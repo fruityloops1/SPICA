@@ -206,6 +206,23 @@ namespace SPICA.Formats.CtrH3D.Texture
             }
         }
 
+        public void Export(string filePath)
+        {
+            H3D h3d = new H3D();
+            h3d.Textures.Add(this);
+            H3D.Save(filePath, h3d);
+        }
+
+        public void Replace(string filePath)
+        {
+            H3D h3d = H3D.Open(File.ReadAllBytes(filePath));
+            if (h3d.Textures.Count == 0)
+                return;
+
+            this.Name = h3d.Textures[0].Name;
+            ReplaceData(h3d.Textures[0]);
+        }
+
         public void ReplaceData(H3DTexture Texture)
         {
             Format = Texture.Format;

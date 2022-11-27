@@ -30,7 +30,7 @@ namespace SPICA.Formats.CtrGfx.Animation
             PreRepeat = (GfxLoopType)Deserializer.Reader.ReadByte();
             PostRepeat = (GfxLoopType)Deserializer.Reader.ReadByte();
             Padding = Deserializer.Reader.ReadUInt16();
-            for (int i = 0; i < EndFrame - StartFrame; i++)
+            for (int i = 0; i < EndFrame - StartFrame + 2; i++)
                 Frames.Add(Deserializer.Reader.ReadMatrix3x4());
         }
 

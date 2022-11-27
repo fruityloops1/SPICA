@@ -1,4 +1,5 @@
 ﻿using SPICA.Formats.Common;
+using SPICA.Formats.CtrGfx;
 using SPICA.Math3D;
 using SPICA.Serialization.Attributes;
 using SPICA.Serialization.Serializer;
@@ -34,8 +35,11 @@ namespace SPICA.Serialization
 
         public readonly List<long> Pointers;
 
-        public BinarySerializer(Stream BaseStream, SerializationOptions Options) : base(BaseStream, Options)
+        private bool IsGfx = false;
+
+        public BinarySerializer(Stream BaseStream, SerializationOptions Options, bool isGfx = false) : base(BaseStream, Options)
         {
+            IsGfx = isGfx;
             Writer = new BinaryWriter(BaseStream);
 
             TypeSections = new Dictionary<Type, Section>();
@@ -70,11 +74,11 @@ namespace SPICA.Serialization
 
             foreach (KeyValuePair<uint, Section> KV in Sections)
             {
-                WriteSection(KV.Value);
+                WriteSection(KV.Key, KV.Value);
             }
         }
 
-        private void WriteSection(Section Section)
+        private void WriteSection(uint sectionID, Section Section)
         {
             //Sort
             if (Section.Comparer != null)
@@ -88,22 +92,19 @@ namespace SPICA.Serialization
 
             if (Section.Header != null)
             {
-                if (Section.Header is Formats.CtrGfx.GfxSectionHeader)
-                {
-                    if (((Formats.CtrGfx.GfxSectionHeader)Section.Header).Magic == IOUtils.ToUInt32("IMAG"))
-                    {
-                        Align(64);
-                        Writer.Write(0);
-                        Writer.Write(0);
-                    }
-                }
-
                 WriteValue(Section.Header);
             }
 
             Section.Position = (int)BaseStream.Position;
 
             WriteSection(Section.Values);
+
+            //String table
+            if (IsGfx && (GfxSectionId)sectionID == GfxSectionId.Strings)
+            {
+                Align(128);
+                Writer.Write(new byte[8]);
+            }
 
             //Set section position and lengths, where:
             //Length is the data length, and length with header is
@@ -114,6 +115,18 @@ namespace SPICA.Serialization
             Section.HeaderLength     = (int)(Section.Position    - HeaderPosition);
 
             Align(Section.Padding);
+        }
+
+        public void AlignBytes(BinaryWriter writer, int alignment, byte value = 0x00)
+        {
+            var startPos = writer.BaseStream.Position;
+            long position = writer.Seek((-(int)writer.BaseStream.Position % alignment + alignment) % alignment, SeekOrigin.Current);
+
+            writer.Seek((int)startPos, System.IO.SeekOrigin.Begin);
+            while (writer.BaseStream.Position != position)
+            {
+                writer.Write(value);
+            }
         }
 
         private RefValue CurrentValue;
