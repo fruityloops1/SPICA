@@ -855,17 +855,17 @@ namespace SPICA.Formats.CtrGfx.Model.Material
                 FragmentShader.TextureEnvironments[i].StageIndex = i;
             }
 
-            CalcMaterialFlagsHash();
-            CalcShaderParamsHash();
-            CalcTextureCoordsHash();
-            CalcTextureSamplersHash();
-            CalcMaterialColorsHash();
-            CalcRasterizationsHash();
-            CalcFragLightHash();
-            CalcFragLightLUTSampHash();
-            CalcTextureEnvironmentHash();
-            CalcAlphaTestHash();
-            CalcFragOpHash();
+            // CalcMaterialFlagsHash();
+            // CalcShaderParamsHash();
+            // CalcTextureCoordsHash();
+            // CalcTextureSamplersHash();
+            // CalcMaterialColorsHash();
+            // CalcRasterizationsHash();
+            // CalcFragLightHash();
+            // CalcFragLightLUTSampHash();
+            // CalcTextureEnvironmentHash();
+            // CalcAlphaTestHash();
+            // CalcFragOpHash();
 
             return false;
         }
